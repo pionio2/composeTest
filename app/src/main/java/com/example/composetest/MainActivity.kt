@@ -1,43 +1,27 @@
 package com.example.composetest
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.Image
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
-import android.widget.Space
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.annotation.ExperimentalCoilApi
-import coil.compose.rememberImagePainter
 import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.parcelize.Parcelize
+import kotlinx.coroutines.*
 
 
 @AndroidEntryPoint
@@ -72,9 +56,11 @@ fun DefaultPreview() {
 }
 
 @Composable
-fun MyScreen(scaffoldState: ScaffoldState = rememberScaffoldState(),
-             mainViewModel: MainViewModel = viewModel()) {
-    Log.e("composeTest", "MyScreen called")
+fun MyScreen(
+    scaffoldState: ScaffoldState = rememberScaffoldState(),
+    mainViewModel: MainViewModel = viewModel()
+) {
+    Log.e("composeTest", "[${Thread.currentThread().name}] MyScreen called")
 
     val isError by mainViewModel.error.observeAsState()
 
@@ -88,11 +74,14 @@ fun MyScreen(scaffoldState: ScaffoldState = rememberScaffoldState(),
             // `state.hasError` is false, and only start when `state.hasError` is true
             // (due to the above if-check), or if `scaffoldState.snackbarHostState` changes.
             try {
-                Log.e("composeTest", "show snackbar")
-                scaffoldState.snackbarHostState.showSnackbar(
-                    message = "Error message",
-                    actionLabel = "Retry message"
-                )
+                Log.e("composeTest", "[${Thread.currentThread().name}] show snackbar1")
+                withContext(Dispatchers.IO) {
+                    Log.e("composeTest", "[${Thread.currentThread().name}] show snackbar2")
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = "Error message",
+                        actionLabel = "Retry message"
+                    )
+                }
             } catch (ce: CancellationException) {
                 Log.e("composeTest", "canceled!!")
             }
@@ -100,7 +89,115 @@ fun MyScreen(scaffoldState: ScaffoldState = rememberScaffoldState(),
     }
 
     Scaffold(scaffoldState = scaffoldState) {
-        HelloScreen()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            val onTimeout by mainViewModel.timeoutText.collectAsState()
+
+            HelloScreen()
+            Box {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ShowSnackBarButton(scaffoldState)
+                    StartTimeoutButton()
+                    ShowLazySnackBar(scaffoldState, onTimeout)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SideEffectTest(timeoutText: String) {
+
+    SideEffect {
+    }
+    Text(timeoutText)
+}
+
+@Composable
+fun BackHandler(backDispatcher: OnBackPressedDispatcher,
+                isEnable: Boolean = false,
+                onBack: () -> Unit) {
+
+    // Safely update the current `onBack` lambda when a new one is provided
+    val currentOnBack by rememberUpdatedState(onBack)
+
+    // Remember in Composition a back callback that calls the `onBack` lambda
+    val backCallback = remember {
+        // Always intercept back events. See the SideEffect for
+        // a more complete version
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                currentOnBack()
+            }
+        }
+    }
+
+    SideEffect {
+        backCallback.isEnabled = isEnable
+    }
+
+    // If `backDispatcher` changes, dispose and reset the effect
+    DisposableEffect(backDispatcher) {
+        // Add callback to the backDispatcher
+        backDispatcher.addCallback(backCallback)
+
+        // When the effect leaves the Composition, remove the callback
+        onDispose {
+            backCallback.remove()
+        }
+    }
+}
+
+@Composable
+fun StartTimeoutButton(mainViewModel: MainViewModel = viewModel()) {
+    Button(onClick = {
+        mainViewModel.changeTimeoutText("Timeout changed by button")
+    }) {
+        Text("Change Timeout Text!!")
+    }
+}
+
+@Composable
+fun ShowSnackBarButton(scaffoldState: ScaffoldState = rememberScaffoldState()) {
+    // Creates a CoroutineScope bound to the ShowSnackBarButton's lifecycle
+    val scope = rememberCoroutineScope()
+
+    Button(
+        onClick = {
+            scope.launch {
+                scaffoldState.snackbarHostState
+                    .showSnackbar("Something happened!")
+            }
+        }) {
+        Text("Show SnackBar")
+    }
+}
+
+@Composable
+fun ShowLazySnackBar(
+    scaffoldState: ScaffoldState = rememberScaffoldState(),
+    timeoutText: String
+) {
+    Log.d("composeTest", "ShowLazySnackBarButton()")
+    // onTimeout은 LaunchedEffect내부에서 접근하나, 재시작 trigger 요건이 아님.
+    val currentTimeoutText by rememberUpdatedState(timeoutText)
+
+    // ShowLazySnackBarButton와 lifecycle이 동일
+    // key가 true 이므로 recompose시에 재시작되지 않음. onTimeout이 바뀌어도 LaunchedEffect는 재시작 되지 않음.
+    LaunchedEffect(true) {
+        Log.i("composeTest", "ShowLazySnackBarButton() - timeout started!")
+        try {
+            delay(3000L)
+            scaffoldState.snackbarHostState.showSnackbar(currentTimeoutText)
+        } catch (ce: CancellationException) {
+            Log.d("composeTest", "ShowLazySnackBarButton() - canceled!")
+        }
     }
 }
 

@@ -1,10 +1,10 @@
 package com.example.composetest
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -15,8 +15,17 @@ class MainViewModel @Inject constructor(private val savedStateHandle: SavedState
     private val _error = MutableLiveData(false)
     val error: LiveData<Boolean> = _error
 
+    private val _timeoutText = MutableStateFlow("Timeout!!")
+    val timeoutText: StateFlow<String> = _timeoutText
+
     fun onNameChange(newName: String) {
         _name.value = newName
         _error.value = newName == "error"
+    }
+
+    fun changeTimeoutText(timeoutText:String) {
+        viewModelScope.launch {
+            _timeoutText.emit(timeoutText)
+        }
     }
 }
