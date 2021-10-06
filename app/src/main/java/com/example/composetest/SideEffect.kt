@@ -114,8 +114,11 @@ fun BackHandler(backDispatcher: OnBackPressedDispatcher,
 
 @Composable
 fun StartTimeoutButton(mainViewModel: MainViewModel = viewModel()) {
+    val scope = rememberCoroutineScope()
     Button(onClick = {
-        mainViewModel.changeTimeoutText("Timeout changed by button")
+        scope.launch {
+            mainViewModel.changeTimeoutText("Timeout changed by button")
+        }
     }) {
         Text("Change Timeout Text!!")
     }

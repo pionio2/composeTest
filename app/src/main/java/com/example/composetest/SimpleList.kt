@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-@InternalCoroutinesApi
+
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SimpleList() {
@@ -52,10 +52,8 @@ fun SimpleList() {
             }
         }
 
-        Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-            AnimatedVisibility(visible = showButton.value) {
-                ScrollToTopButton(scrollState)
-            }
+        AnimatedVisibility(visible = showButton.value, modifier = Modifier.align(Alignment.BottomEnd)) {
+            ScrollToTopButton(scrollState)
         }
     }
 }
@@ -70,7 +68,7 @@ fun ScrollToTopButton(scrollState: LazyListState, modifier: Modifier = Modifier)
             .padding(20.dp)
             .background(color = Color.Gray, shape = CircleShape)
             .clickable {
-                scope.launch {  scrollState.scrollToItem(0) }
+                scope.launch { scrollState.scrollToItem(0) }
             }
     )
 }

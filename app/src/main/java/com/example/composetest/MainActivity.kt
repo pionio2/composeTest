@@ -29,6 +29,7 @@ import com.example.composetest.calendar.EventItem
 
 import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.InternalCoroutinesApi
 import java.util.*
 
 
@@ -41,7 +42,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
-                IpoCalendar()
+//                IpoCalendar()
+                SideEffectScreen()
             }
         }
     }
@@ -140,10 +142,12 @@ fun DayBox(modifier: Modifier = Modifier, date: Int, dateColor: Color = Color.Bl
     }
 }
 
+@InternalCoroutinesApi
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     ComposeTestTheme {
-        IpoCalendar()
+//        IpoCalendar()
+        SideEffectScreen()
     }
 }

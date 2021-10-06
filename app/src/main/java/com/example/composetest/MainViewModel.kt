@@ -5,9 +5,11 @@ import androidx.lifecycle.*
 import com.example.composetest.calendar.EventInfo
 import com.example.composetest.calendar.EventItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.*
 import javax.inject.Inject
 
@@ -35,8 +37,8 @@ class MainViewModel @Inject constructor(private val savedStateHandle: SavedState
         _error.value = newName == "error"
     }
 
-    fun changeTimeoutText(timeoutText: String) {
-        viewModelScope.launch {
+    suspend fun changeTimeoutText(timeoutText: String) {
+        withContext(Dispatchers.Main) {
             _timeoutText.emit(timeoutText)
         }
     }
