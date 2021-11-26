@@ -27,6 +27,7 @@ class MainViewModel @Inject constructor(private val savedStateHandle: SavedState
     private val _currentCalendar = MutableLiveData(Calendar.getInstance())
     val currentCalendar: LiveData<Calendar> = _currentCalendar
 
+
     private val _datesOfCalendar =  MediatorLiveData<List<EventItem>>().apply {
         addSource(_currentCalendar) { value = calculateCalendar(it) }
     }
