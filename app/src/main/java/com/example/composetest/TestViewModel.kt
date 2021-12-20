@@ -4,17 +4,14 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
-import kotlin.jvm.Throws
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 @HiltViewModel
 class TestViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -22,16 +19,65 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
         private const val TAG = "TestViewModel"
     }
 
-    interface NetworkResult {
-        fun success(result: Int)
-        fun fail()
+    private val _stateFlow = MutableStateFlow(99)
+    val stateFlow = _stateFlow
+
+    private val _sharedFlow = MutableSharedFlow<Int>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val sharedFlow = _sharedFlow
+
+    suspend fun startSendDataToSharedFlow() {
+        repeat(10) {
+            _sharedFlow.emit(it)
+            delay(500)
+        }
     }
 
-    private suspend fun requestNetworkData(resultCallback: NetworkResult) {
-        repeat(5) {
+    suspend fun startSendDataToStateFlow() {
+        repeat(10) {
+            _stateFlow.value = it
             delay(500)
-            Log.d(TAG,"requestNetworkData() - ${Thread.currentThread().name}")
-            resultCallback.success(it)
+        }
+    }
+
+    suspend fun repeatSameDataToEachFlow() {
+        repeat(5) {
+            Log.d(TAG, "sendData #$it")
+            _sharedFlow.emit(100)
+            _stateFlow.value = 100
+            delay(500)
+        }
+    }
+
+    private val _connectionFlow = flow {
+        initHeavyLogic() //Expensive logic
+        var i = 0
+        while (true) {
+            delay(500)
+            emit(i++)
+        }
+    }
+    val connectionFlow = _connectionFlow
+    val connectionSharedFlow = _connectionFlow.buffer(0).shareIn(viewModelScope, SharingStarted.WhileSubscribed(0, 0), 0)
+
+    private suspend fun initHeavyLogic() {
+        delay(1000)
+        Log.d(TAG, "initHeavyLogic()")
+    }
+
+    interface NetworkResult {
+        fun success(resultCode: Int)
+        fun fail(cause: Throwable)
+    }
+
+    private fun requestNetwork(resultCallback: NetworkResult) {
+        runBlocking {
+            delay(500)
+            resultCallback.success(200)
+//            resultCallback.fail(Exception("Network access failed!!"))
         }
     }
 
@@ -39,25 +85,34 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
         Log.i(TAG, "releaseNetwork() - Network released")
     }
 
-    @ExperimentalCoroutinesApi
-    fun getNetworkResultFlow(): Flow<String> = callbackFlow {
-        val callbackImpl = object : NetworkResult {
-            override fun success(result: Int) {
-                Log.d(TAG, "Network request success - $result")
-                trySend("SUCCESS")
+    suspend fun connectNetwork(): Int {
+        Log.i(TAG, "connectNetwork() START!")
+
+        val result = suspendCancellableCoroutine<Int> { continuation ->
+            Log.i(TAG, "suspendCancellableCoroutine START!")
+            val callbackImpl = object : NetworkResult {
+                override fun success(resultCode: Int) {
+                    Log.d(TAG, "Network request success - $resultCode")
+                    continuation.resume(resultCode)
+                }
+
+                override fun fail(cause: Throwable) {
+                    Log.e(TAG, "Network request failed!!")
+                    continuation.resumeWithException(cause)
+                }
             }
 
-            override fun fail() {
-                Log.e(TAG, "Network request failed")
-                trySend("ERROR")
-                // 실패시 channel을 닫는다.
-                close()
+            requestNetwork(callbackImpl)
+
+            // coroutine scope이 cancel 될때 호출된다.
+            continuation.invokeOnCancellation {
+                Log.i(TAG, "Release request!")
+                releaseNetwork()
             }
+            Log.i(TAG, "suspendCancellableCoroutine END!")
         }
 
-        requestNetworkData(callbackImpl)
-
-        // coroutine scope이 cancel 또는 close될때 호출된다.
-        awaitClose { releaseNetwork() }
+        Log.i(TAG, "connectNetwork() END!")
+        return result
     }
 }

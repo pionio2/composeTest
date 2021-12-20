@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.composetest.calendar.EventInfo
 import com.example.composetest.calendar.EventItem
@@ -33,7 +36,9 @@ import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
 import java.util.*
+import kotlin.coroutines.suspendCoroutine
 
 
 @AndroidEntryPoint
@@ -55,19 +60,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        MainScope().launch(Dispatchers.IO) {
-            testViewModel.getNetworkResultFlow().collect {
-                Log.i(TAG, "Network result#1: $it - ${Thread.currentThread().name}")
-            }
-            Log.d(TAG,"Collect End #1 - ${Thread.currentThread().name}")
+        MainScope().launch {
+            Log.d(TAG, "Network connection start!")
+            val result = testViewModel.connectNetwork()
+            Log.d(TAG, "Network connection end - $result")
         }
-
-//        MainScope().launch {
-//            testViewModel.getNetworkResultFlow().collect {
-//                Log.i(TAG, "Network result#2: $it")
-//                Log.d(TAG,"Collect End #1")
-//            }
-//        }
     }
 }
 
