@@ -35,6 +35,7 @@ import com.example.composetest.calendar.EventItem
 import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import java.util.*
@@ -61,9 +62,15 @@ class MainActivity : ComponentActivity() {
         }
 
         MainScope().launch {
-            Log.d(TAG, "Network connection start!")
-            val result = testViewModel.connectNetwork()
-            Log.d(TAG, "Network connection end - $result")
+            try {
+//                withTimeoutOrNull(100) {
+                    val result = testViewModel.connectNetwork()
+//                }
+            } catch (ce: CancellationException) {
+                Log.e(TAG, "Canceled: $ce")
+            } catch (t: Throwable) {
+                Log.e(TAG, "Throwable: $t")
+            }
         }
     }
 }
