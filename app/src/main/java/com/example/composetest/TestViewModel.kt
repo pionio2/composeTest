@@ -73,17 +73,19 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
         fun fail(cause: Throwable)
     }
 
-    private fun requestNetwork(resultCallback: NetworkResult) {
-        viewModelScope.launch {
-            delay(1000)
+    private var networkJob: Job? = null
+
+    private fun connectNetwork(resultCallback: NetworkResult) {
+        networkJob = viewModelScope.launch {
+            delay(500)
             resultCallback.success(200)
 //            resultCallback.fail(Exception("Network access failed!!"))
         }
     }
 
-
-    private fun releaseNetwork() {
-        Log.i(TAG, "releaseNetwork() - Network released")
+    private fun cancelNetwork() {
+        networkJob?.cancel()
+        Log.i(TAG, "cancelNetwork() - Network cancelled")
     }
 
     @ExperimentalCoroutinesApi
@@ -93,6 +95,7 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
         val result = suspendCancellableCoroutine<Int> { continuation ->
             Log.i(TAG, "suspendCancellableCoroutine START!")
             val callbackImpl = object : NetworkResult {
+
                 override fun success(resultCode: Int) {
                     Log.d(TAG, "Network request success - $resultCode")
                     continuation.resume(resultCode) {
@@ -107,10 +110,12 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
                 }
             }
 
+            connectNetwork(callbackImpl)
+
             // coroutine scope이 cancel 될때 호출된다.
             continuation.invokeOnCancellation {
-                Log.i(TAG, "Release request!")
-                releaseNetwork()
+                Log.i(TAG, "Cancel network!!")
+                cancelNetwork()
             }
 
             requestNetwork(callbackImpl)

@@ -1,6 +1,8 @@
 package com.example.composetest
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 
 import androidx.activity.ComponentActivity
@@ -31,6 +33,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.composetest.calendar.EventInfo
 import com.example.composetest.calendar.EventItem
+import com.example.composetest.restful.RestFulTestActivity
 
 import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,35 +54,39 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private val testViewModel: TestViewModel by viewModels()
 
-    @ExperimentalCoroutinesApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
-                Log.d("MainActivity", "Compose Start!")
-                Text("Hello world")
-            }
-        }
-
-        MainScope().launch {
-            try {
-//                withTimeoutOrNull(100) {
-                    val result = testViewModel.connectNetwork()
-//                }
-            } catch (ce: CancellationException) {
-                Log.e(TAG, "Canceled: $ce")
-            } catch (t: Throwable) {
-                Log.e(TAG, "Throwable: $t")
+                MainScreen {
+                    Intent(this, RestFulTestActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }.also {
+                        startActivity(it)
+                    }
+                }
             }
         }
     }
 }
 
-@InternalCoroutinesApi
+@Composable
+fun MainScreen(buttonClick: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.align(Alignment.Center)) {
+            Button(
+                onClick = buttonClick
+            ) {
+                Text("Go RestFulApi Test!")
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     ComposeTestTheme {
-
+        MainScreen({})
     }
 }
