@@ -100,7 +100,7 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
                     Log.d(TAG, "Network request success - $resultCode")
                     continuation.resume(resultCode) {
                         Log.i(TAG, "resume with release request!")
-                        releaseNetwork()
+//                        releaseNetwork()
                     }
                 }
 
@@ -118,7 +118,7 @@ class TestViewModel @Inject constructor(private val savedStateHandle: SavedState
                 cancelNetwork()
             }
 
-            requestNetwork(callbackImpl)
+//            requestNetwork(callbackImpl)
             Log.i(TAG, "suspendCancellableCoroutine END!")
         }
 
