@@ -21,8 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
-import com.example.composetest.MainScreen
-import com.example.composetest.TestViewModel
 import com.example.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -41,7 +39,7 @@ class RestFulTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
-                val data by viewModel.natureData.collectAsState()
+                val data by viewModel.mPictureData.collectAsState()
                 RestFulTestScreen(data)
             }
         }
@@ -50,13 +48,13 @@ class RestFulTestActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume()")
-        viewModel.requestRestFul()
+        viewModel.requestPicture()
     }
 }
 
 @ExperimentalCoilApi
 @Composable
-fun RestFulTestScreen(data: Nature) {
+fun RestFulTestScreen(data: Picture) {
     Log.d("RestFulTestActivity", "RestFulTestScreen() - $data")
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.align(Alignment.Center).padding(20.dp)) {
@@ -80,6 +78,6 @@ fun RestFulTestScreen(data: Nature) {
 @Composable
 fun DefaultPreview() {
     ComposeTestTheme {
-        RestFulTestScreen(Nature("안드로이드", "인터넷 어딘가...","https://developer.android.com/images/brand/Android_Robot.png"))
+        RestFulTestScreen(Picture("안드로이드", "인터넷 어딘가...","https://developer.android.com/images/brand/Android_Robot.png"))
     }
 }

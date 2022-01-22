@@ -2,6 +2,7 @@ package com.example.composetest.restful
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import com.sample.data.PictureRequest
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
@@ -15,7 +16,7 @@ import kotlinx.serialization.json.Json
 class RestFulTestRepository {
     companion object {
         private const val TAG = "RestFulTestRepository"
-        const val BASE_URL = "http://192.168.0.6"
+        const val BASE_URL = "http://220.85.88.73"
     }
     private val client: HttpClient
 
@@ -25,7 +26,6 @@ class RestFulTestRepository {
         isLenient = true // "" 따옴표 잘못된건 무시하고 처리
         encodeDefaults = true //null 인 값도 json에 포함 시킨다.
     }
-
 
     init {
         client = HttpClient(CIO) {
@@ -87,5 +87,17 @@ class RestFulTestRepository {
             1000
         }
         else -> 9999 // Unknown
+    }
+
+    @Throws
+    suspend fun getPictureByGet(id: Int) =
+        client.get<Picture>(BASE_URL + "/picture") {
+            parameter("id", 0)
+    }
+
+    @Throws
+    suspend fun getPictureByPost(pictureRequest: PictureRequest) =
+        client.post<Picture>(BASE_URL + "/picture") {
+            body = pictureRequest
     }
 }
