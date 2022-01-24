@@ -17,8 +17,8 @@ class RestFulTestViewModel @Inject constructor(private val restFulRepository: Re
         private const val TAG = "RestFulTestViewModel"
     }
 
-    private val _natureData = MutableStateFlow(Picture("안드로이드", "인터넷 어딘가...", "https://developer.android.com/images/brand/Android_Robot.png"))
-    val mPictureData: StateFlow<Picture> = _natureData
+    private val _pictureData = MutableStateFlow(Picture("안드로이드", "인터넷 어딘가...", "https://developer.android.com/images/brand/Android_Robot.png"))
+    val pictureData: StateFlow<Picture> = _pictureData
 
     fun requestPicture() {
         Log.e(TAG, "requestRestFul()")
@@ -27,7 +27,7 @@ class RestFulTestViewModel @Inject constructor(private val restFulRepository: Re
                 val response = restFulRepository.getPictureByGet(0)
 //                val response = restFulRepository.getPictureByPost(PictureRequest(1))
                 Log.i(TAG, "requestRestFul() - success:$response")
-                _natureData.emit(response)
+                _pictureData.emit(response)
             } catch (th: Throwable) {
                 Log.e(TAG, "Error:Code: ${restFulRepository.getErrorStatus(th)}")
             }

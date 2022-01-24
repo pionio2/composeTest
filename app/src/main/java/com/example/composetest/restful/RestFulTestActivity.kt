@@ -39,7 +39,7 @@ class RestFulTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
-                val data by viewModel.mPictureData.collectAsState()
+                val data by viewModel.pictureData.collectAsState()
                 RestFulTestScreen(data)
             }
         }
