@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 class RestFulTestRepository {
     companion object {
         private const val TAG = "RestFulTestRepository"
-        const val BASE_URL = "http://220.85.88.73"
+        const val BASE_URL = "http://192.168.0.6"
     }
     private val client: HttpClient
 
@@ -70,8 +70,6 @@ class RestFulTestRepository {
             }
         }
     }
-
-    fun getHttpClient() = client
 
     fun getErrorStatus(th: Throwable): Int = when (th) {
         is RedirectResponseException -> { //Http Code: 3xx
