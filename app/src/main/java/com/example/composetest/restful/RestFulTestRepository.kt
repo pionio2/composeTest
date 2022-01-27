@@ -90,7 +90,7 @@ class RestFulTestRepository {
     @Throws
     suspend fun getPictureByGet(id: Int) =
         client.get<Picture>(BASE_URL + "/picture") {
-            parameter("id", 0)
+            parameter("id", id)
     }
 
     @Throws
