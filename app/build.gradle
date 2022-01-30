@@ -36,6 +36,9 @@ android {
     kotlinOptions {
         jvmTarget = '11'
         useIR = true
+        freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
+        // Enable experimental coroutines APIs, including Flow
+        freeCompilerArgs += '-Xopt-in=kotlin.Experimental'
     }
     buildFeatures {
         compose true
@@ -66,6 +69,7 @@ dependencies {
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.0"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0"
 
     //Ktor
 //    implementation "io.ktor:ktor-client-okhttp:$ktor_version"

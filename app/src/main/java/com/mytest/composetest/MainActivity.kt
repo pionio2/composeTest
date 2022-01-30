@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.widget.Space
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.restful.RestFulTestActivity
@@ -59,10 +61,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             ComposeTestTheme {
                 MainScreen {
-                    Intent(this, RestFulTestActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }.also {
-                        startActivity(it)
+                    when (it) {
+                        is KtorTest -> {
+                            Intent(this, RestFulTestActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }.also {
+                                startActivity(it)
+                            }
+                        }
+                        is InappTest -> {
+                            Intent(this, BillingTestActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }.also {
+                                startActivity(it)
+                            }
+                        }
                     }
                 }
             }
@@ -70,14 +83,24 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+sealed interface MainButton
+object KtorTest : MainButton
+object InappTest : MainButton
+
 @Composable
-fun MainScreen(buttonClick: () -> Unit) {
+fun MainScreen(buttonClick: (MainButton) -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.align(Alignment.Center)) {
             Button(
-                onClick = buttonClick
+                onClick = { buttonClick(KtorTest) }
             ) {
                 Text("Go RestFulApi Test!")
+            }
+            Spacer(modifier = Modifier.padding(2.dp))
+            Button(
+                onClick = { buttonClick(InappTest) }
+            ) {
+                Text("Go InApp Buy Test!")
             }
         }
     }

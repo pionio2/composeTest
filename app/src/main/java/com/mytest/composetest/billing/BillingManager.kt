@@ -2,10 +2,7 @@ package com.mytest.composetest.billing
 
 import android.app.Activity
 import android.content.Context
-import android.os.SystemClock
-import android.util.Log
 import androidx.annotation.AnyThread
-import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import com.android.billingclient.api.*
@@ -17,7 +14,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import com.mytest.composetest.billing.SkuInfo.SkuState
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.math.min
 
@@ -34,6 +30,7 @@ import kotlin.math.min
  *
  * 구매 절자
  * 1. billing flow 시작
+ * 2. 완료시 billingConnectionFlow가 trigger 되면서 상품 상세쿼리, 구매 확정 refresh
 작*/
 @OptIn(ExperimentalCoroutinesApi::class)
 class BillingManager(
@@ -69,25 +66,34 @@ class BillingManager(
     private var reconnectTime = RECONNECT_START_TIME_IN_MILLS
 
     // 상품별 정보 flow
-    @GuardedBy("skuInfoMapLock")
-    private val skuInfoMap: MutableMap<String, MutableStateFlow<SkuInfo>> = HashMap()
-    private val skuInfoMapLock = Any()
+    private val _skuInfoList = MutableStateFlow<List<SkuInfo>>(listOf())
+    val skuInfoList = _skuInfoList.asStateFlow()
+    private val skuInfoListCalculateDispatcher = Dispatchers.Default.limitedParallelism(1)
 
     // 확정 처리중인 소비성 물품 리스트
     private val purchaseConsumptionInProcess: MutableSet<Purchase> = HashSet()
 
+
     init {
-        //1. billing client 생성
+        //1. 초기 skuInfo 생성
+        val allSkuList = mutableListOf<String>().apply {
+            addAll(consumableSKUs)
+            addAll(unConsumableSKUs)
+            addAll(subscriptionsSKUs)
+        }
+        _skuInfoList.value = allSkuList.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, it, null) }
+
+        //2. billing client 생성
         val purchaseCallback = PurchasesUpdatedListener { billingResult, list -> appCoroutineScope.launch { onPurchasesUpdated(billingResult, list) } }
         billingClient = BillingClient.newBuilder(appContext)
             .setListener(purchaseCallback) // 구매 결재가 완료되면 호출될 콜백
             .enablePendingPurchases() //대기중이 거래를 지원
             .build()
 
-        //2. 각종 flow에 대한 collect 등록
+        //3. 각종 flow에 대한 collect 등록
         collectStates()
 
-        //2. connect billing service
+        //4. connect billing service
         appCoroutineScope.launch { connectBillingService() }
     }
 
@@ -135,7 +141,7 @@ class BillingManager(
     @MainThread
     suspend fun launchBillingFlow(activity: Activity, sku: String): Boolean {
         if (billingClient.isReady.not()) {
-            LogError(TAG) {"billingClient is not connected!"}
+            LogError(TAG) { "billingClient is not connected!" }
             return false
         }
 
@@ -159,9 +165,9 @@ class BillingManager(
      * @return true if launch is successful
      */
     @MainThread
-    private fun launchingBillingFlow(activity: Activity, sku: String, purchaseToken: String?): Boolean {
-        val skuInfo = synchronized(skuInfoMapLock) { skuInfoMap[sku]?.value }
-        if (skuInfo == null) {
+    private suspend fun launchingBillingFlow(activity: Activity, sku: String, purchaseToken: String?): Boolean {
+        val skuInfo = withContext(skuInfoListCalculateDispatcher) { _skuInfoList.value.find { it.sku == sku } }
+        if (skuInfo?.skuDetails == null) {
             LogError(TAG) { "launchBillingFlow() - sku:$sku has not details." }
             return false
         }
@@ -197,7 +203,7 @@ class BillingManager(
     suspend fun refreshAllPurchases() {
         LogDebug(TAG) { "refreshPurchases() - Refreshing purchases info and final confirm" }
         if (billingClient.isReady.not()) {
-            LogError(TAG) {"billingClient is not connected!"}
+            LogError(TAG) { "billingClient is not connected!" }
             return
         }
         coroutineScope {
@@ -321,17 +327,51 @@ class BillingManager(
     }
 
     /**
-     * 해당 sku의 구매 상태를 emit 한다. (state flow이니까 변경되지 않았다면 collect가 발생하지 않음)
+     * 해당 sku의 구매 상태 변경한다.
      * @param sku product ID to change the state of
      * @param newSkuState the new state of the sku.
      */
     @AnyThread
-    private fun setSkuState(sku: String, newSkuState: SkuState) {
-        val skuInfoFlow = synchronized(skuInfoMapLock) { skuInfoMap[sku] }
-        if (skuInfoFlow == null) {
-            LogError(TAG) { "setSkuState() - Unknown SKU $sku. Check to make sure SKU matches SKUS in the Play developer console." }
-        } else {
-            skuInfoFlow.tryEmit(skuInfoFlow.value.copy(skuState = newSkuState))
+    private suspend fun setSkuState(sku: String, newSkuState: SkuState) {
+        withContext(skuInfoListCalculateDispatcher) {
+            val skuInfo = _skuInfoList.value.find { it.sku == sku }
+            if (skuInfo == null) {
+                LogError(TAG) { "setSkuState() - Unknown SKU $sku. Check to make sure SKU matches SKUS in the Play developer console." }
+            } else {
+                val newSkuInfoList = mutableListOf<SkuInfo>().apply {
+                    addAll(_skuInfoList.value)
+                }
+                val index = newSkuInfoList.indexOf(skuInfo)
+                if (index != -1) {
+                    newSkuInfoList[index] = skuInfo.copy(skuState = newSkuState)
+                    _skuInfoList.emit(newSkuInfoList)
+                }
+            }
+        }
+    }
+
+    /**
+     * 해당 sku의 상세 정보를 변경한다.
+     * @param sku product ID to change the state of
+     * @param details the new details of the sku.
+     */
+    @AnyThread
+    private suspend fun setSkuDetails(sku: String, details: SkuDetails) {
+        LogInfo(TAG) { "setSkuDetails() - sku:$sku title:${details.title}" }
+        withContext(skuInfoListCalculateDispatcher) {
+            val skuInfo = _skuInfoList.value.find { it.sku == sku }
+            if (skuInfo == null) {
+                LogError(TAG) { "setSkuDetails() - Unknown SKU $sku. Check to make sure SKU matches SKUS in the Play developer console." }
+            } else {
+                val newSkuInfoList = mutableListOf<SkuInfo>().apply {
+                    addAll(_skuInfoList.value)
+                }
+                val index = newSkuInfoList.indexOf(skuInfo)
+                if (index != -1) {
+                    newSkuInfoList[index] = skuInfo.copy(skuDetails = details)
+                    _skuInfoList.emit(newSkuInfoList)
+                }
+            }
         }
     }
 
@@ -341,23 +381,18 @@ class BillingManager(
      * @param purchase an up-to-date object to set the state for the Sku
      */
     @AnyThread
-    private fun setSkuStateFromPurchase(purchase: Purchase) {
+    private suspend fun setSkuStateFromPurchase(purchase: Purchase) {
+        LogDebug(TAG) { "setSkuStateFromPurchase: skus: ${purchase.skus}" }
         purchase.skus.forEach { purchaseSku ->
-            val skuInfoFlow = synchronized(skuInfoMapLock) { skuInfoMap[purchaseSku] }
-            if (skuInfoFlow != null) {
-                val previousValue = skuInfoFlow.value
-                when (purchase.purchaseState) {
-                    Purchase.PurchaseState.PENDING -> skuInfoFlow.tryEmit(previousValue.copy(skuState = SkuState.SKU_STATE_PENDING))
-                    Purchase.PurchaseState.UNSPECIFIED_STATE -> skuInfoFlow.tryEmit(previousValue.copy(skuState = SkuState.SKU_STATE_UNPURCHASED))
-                    Purchase.PurchaseState.PURCHASED -> if (purchase.isAcknowledged) {
-                        skuInfoFlow.tryEmit(previousValue.copy(skuState = SkuState.SKU_STATE_PURCHASED_AND_ACKNOWLEDGED))
-                    } else {
-                        skuInfoFlow.tryEmit(previousValue.copy(skuState = SkuState.SKU_STATE_PURCHASED))
-                    }
-                    else -> Log.e(TAG, "setSkuStateFromPurchase() - Purchase in unknown state: " + purchase.purchaseState)
+            when (purchase.purchaseState) {
+                Purchase.PurchaseState.PENDING -> setSkuState(purchaseSku, SkuState.SKU_STATE_PENDING)
+                Purchase.PurchaseState.UNSPECIFIED_STATE -> setSkuState(purchaseSku, SkuState.SKU_STATE_UNPURCHASED)
+                Purchase.PurchaseState.PURCHASED -> if (purchase.isAcknowledged) {
+                    setSkuState(purchaseSku, SkuState.SKU_STATE_PURCHASED_AND_ACKNOWLEDGED)
+                } else {
+                    setSkuState(purchaseSku, SkuState.SKU_STATE_PURCHASED)
                 }
-            } else {
-                LogError(TAG) { "setSkuStateFromPurchase() - Unknown SKU $purchaseSku Check to make sure SKU matches SKUS in the Play developer console." }
+                else -> LogError(TAG) { "setSkuStateFromPurchase() - Purchase in unknown state: ${purchase.purchaseState}" }
             }
         }
     }
@@ -426,26 +461,26 @@ class BillingManager(
      * @param purchase google play에서 받은 구매 리스트
      * @param knownSkuList 로컬에서 가지고 있는 상품 리스트
      */
-    private fun updateStateForNotExistSkuInPurchasedList(purchases: List<Purchase>, knownSkuList: List<String>) {
+    @AnyThread
+    private suspend fun updateStateForNotExistSkuInPurchasedList(purchases: List<Purchase>, knownSkuList: List<String>) {
         if (knownSkuList.isEmpty()) {
             return
         }
 
-        //Local , purchase 정보 모두에 있는 skus
-        val updateTargetSkus = HashSet<String>()
-
         // 가지고 있는(skusToUpdate) 항목중에 업데이트 해야할 SKU를 찾는다. 가지고 있는 항목이지만 (google play의) 구매 리스트에 없는 skus들을 찾는다.
-        purchases.flatMap { it.skus }
-            .forEach { purchasedSku ->
-                synchronized(skuInfoMapLock) {
-                    val skuInfoFlow = skuInfoMap[purchasedSku]
-                    if (skuInfoFlow != null) {
-                        updateTargetSkus.add(purchasedSku)
+        val updateTargetSkus = withContext(skuInfoListCalculateDispatcher) {
+            val targetSkus = HashSet<String>()
+            purchases.flatMap { it.skus }
+                .forEach { purchasedSku ->
+                    val skuInfo = _skuInfoList.value.find { it.sku == purchasedSku }
+                    if (skuInfo != null) {
+                        targetSkus.add(purchasedSku)
                     } else {
-                        LogError(TAG) { "processPurchaseList() - Unknown SKU:$purchasedSku" }
+                        LogError(TAG) { "updateStateForNotExistSkuInPurchasedList() - Unknown SKU:$purchasedSku" }
                     }
                 }
-            }
+            targetSkus
+        }
 
         // 업데이트 되지 못한 (google play에서 정보를 내려받지 못한) known 상품(sku들)은 모두 미구매 상태로 변경한다.
         knownSkuList.filter { updateTargetSkus.contains(it).not() }
@@ -476,12 +511,7 @@ class BillingManager(
                         LogError(TAG) { "querySkuDetails() - Sku details are not exist. requested skus are not matched to Google play console" }
                     } else {
                         skuDetailList.forEach { skuDetailInfo ->
-                            val skuInfoFlow = synchronized(skuInfoMapLock) { skuInfoMap[skuDetailInfo.sku] }
-                            if (skuInfoFlow == null) {
-                                LogError(TAG) { "querySkuDetails() - Unknown SKU ${skuDetailInfo.sku}." }
-                            } else {
-                                skuInfoFlow.tryEmit(skuInfoFlow.value.copy(skuDetails = skuDetailInfo))
-                            }
+                            setSkuDetails(skuDetailInfo.sku, skuDetailInfo)
                         }
                     }
                 }
