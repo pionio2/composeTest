@@ -33,7 +33,7 @@ class RestFulTestActivity : AppCompatActivity() {
 
     private val viewModel: RestFulTestViewModel by viewModels()
 
-    @ExperimentalCoilApi
+    @OptIn(ExperimentalCoilApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(TAG, "onCreate()")
         super.onCreate(savedInstanceState)
