@@ -30,15 +30,15 @@ import kotlin.math.min
  *
  * 구매 절자
  * 1. billing flow 시작
- * 2. 완료시 billingConnectionFlow가 trigger 되면서 상품 상세쿼리, 구매 확정 refresh
+ * 2. 완료시 onPurchasesUpdated()가 호출되면서
 작*/
 @OptIn(ExperimentalCoroutinesApi::class)
 class BillingManager(
     private val appContext: Context,
-    private val consumableSKUs: List<String>, // 소비성 상품 목룍
-    private val unConsumableSKUs: List<String>, // 비소비성 상품 목룍
-    private val subscriptionsSKUs: List<String>, // 구독 상품 목록
-    private val appCoroutineScope: CoroutineScope
+    private val appCoroutineScope: CoroutineScope, //기본
+    initConsumableSKUs: List<String> = listOf(), // 소비성 상품 목룍
+    initOneTimeConsumableSKUs: List<String> = listOf(), // 일회성 소비 상품 목록
+    initSubscriptionsSKUs: List<String> = listOf() // 구독 상품 목록
 ) {
     companion object {
         private const val TAG = "BillingManager"
@@ -49,7 +49,7 @@ class BillingManager(
 
     enum class ProductType(val typeString: String) {
         CONSUMABLE(BillingClient.SkuType.INAPP), // 소모성
-        UNCONSUMABLE(BillingClient.SkuType.INAPP), // 비소모성
+        ONE_TIME_CONSUMABLE(BillingClient.SkuType.INAPP),  // 일회성 소비 상품 목록
         SUBSCRIPTION(BillingClient.SkuType.SUBS), // 구독형
     }
 
@@ -73,12 +73,15 @@ class BillingManager(
     // 확정 처리중인 소비성 물품 리스트
     private val purchaseConsumptionInProcess: MutableSet<Purchase> = HashSet()
 
+    private val consumableSKUs: List<String> = initConsumableSKUs // 소비성 상품 목룍
+    private val oneTimeConsumableSKUs: List<String> = initOneTimeConsumableSKUs// 일회성 소비 상품 목룍
+    private val subscriptionsSKUs: List<String> = initSubscriptionsSKUs// 구독 상품 목록
 
     init {
-        //1. 초기 skuInfo 생성
+        //1. 초기 상품 리스트로 skuInfo 생성
         val allSkuList = mutableListOf<String>().apply {
             addAll(consumableSKUs)
-            addAll(unConsumableSKUs)
+            addAll(oneTimeConsumableSKUs)
             addAll(subscriptionsSKUs)
         }
         _skuInfoList.value = allSkuList.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, it, null) }
@@ -98,6 +101,7 @@ class BillingManager(
     }
 
     // connect billing service
+    @WorkerThread
     private suspend fun connectBillingService() {
         val billingConnCallback = object : BillingClientStateListener {
             // billing service에 connection 실패 -> 재시도 호출
@@ -125,9 +129,9 @@ class BillingManager(
                     // billing service 완료후 상품 상세 정보를 가져 온다.
                     // google play 찔러서 상품정보(detail) state flow에 재 반영
                     querySkuDetails(consumableSKUs, ProductType.CONSUMABLE)
-                    querySkuDetails(unConsumableSKUs, ProductType.UNCONSUMABLE)
+                    querySkuDetails(oneTimeConsumableSKUs, ProductType.ONE_TIME_CONSUMABLE)
                     querySkuDetails(subscriptionsSKUs, ProductType.SUBSCRIPTION)
-                    refreshAllPurchases() // 소비성, 비소비성, 구독 관련된 정보를 google play에 질러서 state flow에 재 반영.
+                    refreshAllPurchases() // 소비성, 일회성, 구독 관련된 정보를 google play에 질러서 state flow에 재 반영.
                 } else {
                     retryBillingServiceConnectionWithExponentialBackoff()
                 }
@@ -196,7 +200,7 @@ class BillingManager(
     }
 
     /**
-     * 구매된 상품(소모, 비소모, 구독)정보를 google play에 찔러서 받아오고
+     * 구매된 상품(소모성, 일회성구매, 구독)정보를 google play에 찔러서 받아온다.
      * onResume(), onCreate()에서 호출해야한다.
      */
     @AnyThread
@@ -208,7 +212,7 @@ class BillingManager(
         }
         coroutineScope {
             launch(Dispatchers.IO) { refreshPurchases(ProductType.CONSUMABLE, consumableSKUs) }
-            launch(Dispatchers.IO) { refreshPurchases(ProductType.UNCONSUMABLE, unConsumableSKUs) }
+            launch(Dispatchers.IO) { refreshPurchases(ProductType.ONE_TIME_CONSUMABLE, oneTimeConsumableSKUs) }
             launch(Dispatchers.IO) { refreshPurchases(ProductType.SUBSCRIPTION, subscriptionsSKUs) }
         }
         LogDebug(TAG) { "refreshPurchases() - Refreshing purchases finished." }
@@ -295,7 +299,7 @@ class BillingManager(
                         setSkuStateFromPurchase(purchase)
                         val consumableSkuMap = purchase.skus.groupBy { consumableSKUs.contains(it) }
                         val consumableCount = consumableSkuMap[true]?.size ?: 0 //소비성 물품 개수
-                        val unConsumableCount = consumableSkuMap[false]?.size ?: 0 //비소비성 or 구독 물품 개수
+                        val unConsumableCount = consumableSkuMap[false]?.size ?: 0 //일회성 구매 or 구독 물품 개수
 
                         // 물품 구매 확정을 google play에 요청한다.
                         when {
@@ -377,7 +381,7 @@ class BillingManager(
 
     /**
      * 구매 목록을 받아서 현재 각각의 sku들의 구매 상태를 업데이트 한다.
-     * 구매 상태인 경우 내부적으로 isAcknowledged를 이용하여 소비,비소비 물품을 구분하여 표기한다.
+     * 구매 상태인 경우 내부적으로 isAcknowledged를 이용하여 소비, 일회성 구매 물품을 구분하여 표기한다.
      * @param purchase an up-to-date object to set the state for the Sku
      */
     @AnyThread
@@ -440,7 +444,7 @@ class BillingManager(
         }
     }
 
-    //비소비성 물품에 대한 확정(acknowledge) - Google play에 확정
+    //일회성 구매 물품에 대한 확정(acknowledge) - Google play에 확정
     @WorkerThread
     private suspend fun acknowledgePurchase(purchase: Purchase) {
         val billingResult = billingClient.acknowledgePurchase(
@@ -551,6 +555,21 @@ class BillingManager(
                 LogError(TAG) { "getSubscriptionPurchase() - Failed to get purchase sku:$sku errMSg: ${billingResult.debugMessage}" }
                 null
             }
+        }
+    }
+
+    /**
+     * 상품정보가 추가,삭제 되었을때 정보를 변경한다.
+     */
+    @AnyThread
+    fun changeSkuList(consumableSkus: List<String>? = null, oneTimeConsumableSkus: List<String>? = null, subscriptionSkus: List<String>? = null) {
+        if (consumableSkus != null) {
+            //TODO 멤버변수 교체
+            //TODO skuInfo에 소모성, 일회성, 구독인지 항목 추가.
+            //TODO 해당 항목등 모두 삭제.
+            //TODO 신규 항목들 추가
+            // detail query
+            // 구매정보 query
         }
     }
 }

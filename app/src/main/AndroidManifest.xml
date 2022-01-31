@@ -14,9 +14,11 @@
         android:theme="@style/Theme.ComposeTest">
         <activity
             android:name=".billing.ui.BillingTestActivity"
+            android:theme="@style/Theme.ComposeTest.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".restful.RestFulTestActivity"
+            android:theme="@style/Theme.ComposeTest.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

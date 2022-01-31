@@ -6,7 +6,7 @@ import android.util.Log
  * kotlin에서 사용하기 위한 utility functions
  */
 
-const val APP_TAG = "Gongmoja"
+const val APP_TAG = "MyTestApp"
 
 inline fun LogDebug(TAG: String, printLog: () -> String) {
     Log.d(APP_TAG, "[$TAG] ${printLog()}")
