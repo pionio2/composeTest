@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 
 import coil.annotation.ExperimentalCoilApi
 import com.android.billingclient.api.SkuDetails
+import com.mytest.composetest.billing.ProductType
 import com.mytest.composetest.billing.SkuInfo
 
 import com.mytest.composetest.ui.theme.ComposeTestTheme
@@ -148,7 +149,7 @@ fun DefaultPreview() {
         BillingTestScreen(
             skuInfoList = listOf(
                 SkuInfo(
-                    SkuInfo.SkuState.SKU_STATE_PURCHASED, "basic_1_month",
+                    SkuInfo.SkuState.SKU_STATE_PURCHASED, ProductType.SUBSCRIPTION,"basic_1_month",
                     SkuDetails(
                         """{"productId":"basic_1_month","type":"subs","title":"Basic 한달 사용권 (com.mytest.composetest (unreviewed))","name":"Basic 한달 사용권","price":"₩9,900",
                         "price_amount_micros":9900000000,"price_currency_code":"KRW","description":"Basic 등급 한달 사용권","subscriptionPeriod":"P1M","skuDetailsToken":"AEuhp4K5UMrJXD_qGl5qv2mo5uap1F1MWzIVbfR4_zNdJRWRH1PF44nsmK5uTBM0ZVfX"}
@@ -156,7 +157,7 @@ fun DefaultPreview() {
                     )
                 ),
                 SkuInfo(
-                    SkuInfo.SkuState.SKU_STATE_UNPURCHASED, "theme_5_charge",
+                    SkuInfo.SkuState.SKU_STATE_UNPURCHASED, ProductType.CONSUMABLE,"theme_5_charge",
                     SkuDetails(
                         """{"productId":"theme_5_charge","type":"inapp","title":"테마 5개 구매 충전 (com.mytest.composetest (unreviewed))","name":"테마 5개 구매 충전","price":"₩4,000",
                             "price_amount_micros":4000000000,"price_currency_code":"KRW","description":"테마 5개 구매 충전","skuDetailsToken":"AEuhp4IZaoFENa_AO4nfQtmugychdxFXu0M9OW0PMO9zrQUo_CZfiByXaUeiIdC2SVvD"}"""

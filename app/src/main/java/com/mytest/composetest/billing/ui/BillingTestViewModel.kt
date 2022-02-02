@@ -5,6 +5,7 @@ import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mytest.composetest.ComposeTestApplication
 import com.mytest.composetest.billing.BillingManager
+import com.mytest.composetest.billing.ProductType
 import com.mytest.composetest.billing.SkuInfo
 import com.mytest.composetest.util.LogDebug
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,13 +48,19 @@ class BillingTestViewModel @Inject constructor(private val savedStateHandle: Sav
 
             _billingManager.value = BillingManager(
                 ComposeTestApplication.getInstance(),
+                ComposeTestApplication.getInstance(),
                 consumableSKUs,
                 unConsumableSKUs,
-                subscriptionSKUs,
-                ComposeTestApplication.getInstance() //TODO activity에 한정시키는 버전과, process 뜰때 버전으로 바꿔야 한다.
+                subscriptionSKUs
             )
 
             registerCollector()
+        }
+
+        // 10초 후에 추가적으로 소비성 상품 한개를 추가한다. (TEST 목적)
+        viewModelScope.launch {
+            delay(10000)
+            _billingManager.value?.changeSkuList(listOf("theme_5_charge", "theme_1_charge"), ProductType.CONSUMABLE)
         }
     }
 
@@ -93,7 +100,8 @@ class BillingTestViewModel @Inject constructor(private val savedStateHandle: Sav
      */
     private suspend fun getConsumableProducts(): List<String> {
         delay(100)
-        return mutableListOf("theme_5_charge", "theme_1_charge")
+//        return mutableListOf("theme_5_charge", "theme_1_charge")
+        return listOf("theme_5_charge")
     }
 
     /**
@@ -102,7 +110,7 @@ class BillingTestViewModel @Inject constructor(private val savedStateHandle: Sav
      */
     private suspend fun getUnConsumableProducts(): List<String> {
         delay(100)
-        return mutableListOf("remove_ads")
+        return listOf("remove_ads")
     }
 
     /**
@@ -111,7 +119,7 @@ class BillingTestViewModel @Inject constructor(private val savedStateHandle: Sav
      */
     private suspend fun getSubscriptionProducts(): List<String> {
         delay(100)
-        return mutableListOf("premium_1_month", "basic_1_month")
+        return listOf("premium_1_month", "basic_1_month")
     }
 }
 

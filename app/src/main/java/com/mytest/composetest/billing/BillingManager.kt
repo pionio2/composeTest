@@ -47,12 +47,6 @@ class BillingManager(
         const val PURCHASE_INIT_STATE = -999
     }
 
-    enum class ProductType(val typeString: String) {
-        CONSUMABLE(BillingClient.SkuType.INAPP), // 소모성
-        ONE_TIME_CONSUMABLE(BillingClient.SkuType.INAPP),  // 일회성 소비 상품 목록
-        SUBSCRIPTION(BillingClient.SkuType.SUBS), // 구독형
-    }
-
     private val billingClient: BillingClient
 
     // Billing service에 connection 성공 / 실패시 trigger 된다. (내부적으로 상품 정보 갱신 및 재시도를 위해 사용된다.)
@@ -73,18 +67,17 @@ class BillingManager(
     // 확정 처리중인 소비성 물품 리스트
     private val purchaseConsumptionInProcess: MutableSet<Purchase> = HashSet()
 
-    private val consumableSKUs: List<String> = initConsumableSKUs // 소비성 상품 목룍
-    private val oneTimeConsumableSKUs: List<String> = initOneTimeConsumableSKUs// 일회성 소비 상품 목룍
-    private val subscriptionsSKUs: List<String> = initSubscriptionsSKUs// 구독 상품 목록
+    private val consumableSKUs: MutableList<String> = initConsumableSKUs.toMutableList() // 소비성 상품 목룍
+    private val oneTimeConsumableSKUs: MutableList<String> = initOneTimeConsumableSKUs.toMutableList() // 일회성 소비 상품 목룍
+    private val subscriptionsSKUs: MutableList<String> = initSubscriptionsSKUs.toMutableList()// 구독 상품 목록
 
     init {
         //1. 초기 상품 리스트로 skuInfo 생성
-        val allSkuList = mutableListOf<String>().apply {
-            addAll(consumableSKUs)
-            addAll(oneTimeConsumableSKUs)
-            addAll(subscriptionsSKUs)
+        _skuInfoList.value = mutableListOf<SkuInfo>().apply {
+            addAll(consumableSKUs.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, ProductType.CONSUMABLE, it, null) })
+            addAll(oneTimeConsumableSKUs.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, ProductType.ONE_TIME_CONSUMABLE, it, null) })
+            addAll(subscriptionsSKUs.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, ProductType.SUBSCRIPTION, it, null) })
         }
-        _skuInfoList.value = allSkuList.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, it, null) }
 
         //2. billing client 생성
         val purchaseCallback = PurchasesUpdatedListener { billingResult, list -> appCoroutineScope.launch { onPurchasesUpdated(billingResult, list) } }
@@ -211,16 +204,16 @@ class BillingManager(
             return
         }
         coroutineScope {
-            launch(Dispatchers.IO) { refreshPurchases(ProductType.CONSUMABLE, consumableSKUs) }
-            launch(Dispatchers.IO) { refreshPurchases(ProductType.ONE_TIME_CONSUMABLE, oneTimeConsumableSKUs) }
-            launch(Dispatchers.IO) { refreshPurchases(ProductType.SUBSCRIPTION, subscriptionsSKUs) }
+            launch(Dispatchers.IO) { refreshPurchases(consumableSKUs, ProductType.CONSUMABLE) }
+            launch(Dispatchers.IO) { refreshPurchases(oneTimeConsumableSKUs, ProductType.ONE_TIME_CONSUMABLE) }
+            launch(Dispatchers.IO) { refreshPurchases(subscriptionsSKUs, ProductType.SUBSCRIPTION) }
         }
         LogDebug(TAG) { "refreshPurchases() - Refreshing purchases finished." }
     }
 
     // 구매 상품 정보를 얻어 온다.
     @WorkerThread
-    private suspend fun refreshPurchases(productType: ProductType, skuList: List<String>) {
+    private suspend fun refreshPurchases(skuList: List<String>, productType: ProductType) {
         LogDebug(TAG) { "refreshPurchases() - productType: $productType" }
         val purchasesResult = billingClient.queryPurchasesAsync(productType.typeString)
         val billingResult = purchasesResult.billingResult
@@ -562,14 +555,35 @@ class BillingManager(
      * 상품정보가 추가,삭제 되었을때 정보를 변경한다.
      */
     @AnyThread
-    fun changeSkuList(consumableSkus: List<String>? = null, oneTimeConsumableSkus: List<String>? = null, subscriptionSkus: List<String>? = null) {
-        if (consumableSkus != null) {
-            //TODO 멤버변수 교체
-            //TODO skuInfo에 소모성, 일회성, 구독인지 항목 추가.
-            //TODO 해당 항목등 모두 삭제.
-            //TODO 신규 항목들 추가
-            // detail query
+    suspend fun changeSkuList(newSkus: List<String>, productType: ProductType) {
+        val targetSKUList = when (productType) {
+            ProductType.CONSUMABLE -> consumableSKUs
+            ProductType.ONE_TIME_CONSUMABLE -> oneTimeConsumableSKUs
+            ProductType.SUBSCRIPTION -> subscriptionsSKUs
+        }
+
+        // 멤버변수 교체
+        withContext(Dispatchers.Main) {
+            targetSKUList.apply {
+                clear()
+                addAll(newSkus)
+            }
+        }
+
+        // skuInfo list에 새로운 sku 정보 업데이트
+        withContext(skuInfoListCalculateDispatcher) {
+            val newSkuInfoList = consumableSKUs.map { SkuInfo(SkuState.SKU_STATE_UNPURCHASED, productType, it, null) }.toMutableList()
+            val notChangedList = _skuInfoList.value.filter { it.productType != productType }
+            newSkuInfoList.addAll(notChangedList)
+            newSkuInfoList.sortBy { it.productType.ordinal }
+            _skuInfoList.value = newSkuInfoList
+        }
+
+        withContext(Dispatchers.IO) {
+            // 상품 상세 정보 query
+            querySkuDetails(targetSKUList, ProductType.CONSUMABLE)
             // 구매정보 query
+            refreshPurchases(targetSKUList, ProductType.CONSUMABLE)
         }
     }
 }
