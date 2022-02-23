@@ -36,6 +36,8 @@ import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.restful.RestFulTestActivity
+import com.mytest.composetest.ui.common.PressStateButton
+import com.mytest.composetest.ui.common.pressStateButtonColors
 
 import com.mytest.composetest.ui.theme.ComposeTestTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -97,7 +99,8 @@ fun MainScreen(buttonClick: (MainButton) -> Unit) {
                 Text("Go RestFulApi Test!")
             }
             Spacer(modifier = Modifier.padding(2.dp))
-            Button(
+            PressStateButton(colors = ButtonDefaults.pressStateButtonColors(backgroundPressColor = Color.Yellow,
+            contentPressColor = Color.Black),
                 onClick = { buttonClick(InappTest) }
             ) {
                 Text("Go InApp Buy Test!")
