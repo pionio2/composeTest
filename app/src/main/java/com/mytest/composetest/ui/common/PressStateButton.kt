@@ -1,19 +1,25 @@
 package com.mytest.composetest.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mytest.composetest.util.LogError
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -21,50 +27,68 @@ fun PressStateButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    elevation: ButtonElevation? = ButtonDefaults.elevation(),
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    elevation: ButtonElevation? = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
     shape: Shape = MaterialTheme.shapes.small,
     border: BorderStroke? = null,
     colors: PressStateButtonColors = ButtonDefaults.pressStateButtonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    var isFocused by remember { mutableStateOf(false) }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val backgroundColor by if (isPressed) colors.pressedBackgroundColor(enabled = enabled) else colors.backgroundColor(enabled = enabled)
-    val contentColor by if (isPressed) colors.pressedContentColor(enabled = enabled) else colors.contentColor(enabled = enabled)
+    val backgroundColor by if (isPressed || isFocused) colors.pressedBackgroundColor(enabled = enabled) else colors.backgroundColor(enabled = enabled)
+    val contentColor by if (isPressed || isFocused) colors.pressedContentColor(enabled = enabled) else colors.contentColor(enabled = enabled)
 
-    Surface(
-        modifier = modifier,
-        shape = shape,
-        color = backgroundColor,
-        contentColor = contentColor.copy(alpha = 1f),
-        border = border,
-        elevation = elevation?.elevation(enabled, interactionSource)?.value ?: 0.dp,
-        onClick = onClick,
-        enabled = enabled,
-        role = Role.Button,
-        interactionSource = interactionSource,
-        indication = rememberRipple()
-    ) {
-        CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
-            ProvideTextStyle(
-                value = MaterialTheme.typography.button
-            ) {
-                Row(
-                    Modifier
-                        .defaultMinSize(
-                            minWidth = ButtonDefaults.MinWidth,
-                            minHeight = ButtonDefaults.MinHeight
-                        )
-                        .padding(contentPadding),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = content
-                )
+    val focusRequester = remember { FocusRequester() }
+
+//    modifier
+//        .focusRequester(focusRequester)
+//        .onFocusChanged { isFocused = it.isFocused
+//        LogError("doohyun"){"doohyun ${it.isFocused}"}}
+//        .focusTarget()
+//        .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } }
+//        .onFocusEvent { LogError("doohyun"){"doohyun event ${it.isFocused}"}  }
+
+//    CompositionLocalProvider(LocalRippleTheme provides NoRippleTheme) {
+        Surface(
+            modifier = modifier.focusRequester(focusRequester)
+                .onFocusChanged { isFocused = it.isFocused
+                    LogError("doohyun"){"doohyun ${it.isFocused}"}}
+                .focusTarget()
+                .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } },
+//                .onFocusEvent { LogError("doohyun"){"doohyun event $it"}  },
+            shape = shape,
+            color = backgroundColor,
+            contentColor = contentColor.copy(alpha = 1f),
+            border = border,
+            elevation = elevation?.elevation(enabled, interactionSource)?.value ?: 0.dp,
+            onClick = onClick,
+            enabled = enabled,
+            role = Role.Button,
+            interactionSource = interactionSource,
+            indication = rememberRipple()
+        ) {
+            CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
+                ProvideTextStyle(
+                    value = MaterialTheme.typography.button
+                ) {
+                    Row(
+                        Modifier
+                            .defaultMinSize(
+                                minWidth = ButtonDefaults.MinWidth,
+                                minHeight = ButtonDefaults.MinHeight
+                            )
+                            .padding(contentPadding),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = content
+                    )
+                }
             }
         }
     }
-}
+//}
 
 @Stable
 interface PressStateButtonColors : ButtonColors {
