@@ -1,8 +1,10 @@
 package com.mytest.composetest.ui.common
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -35,29 +37,22 @@ fun PressStateButton(
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit
 ) {
-    var isFocused by remember { mutableStateOf(false) }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val backgroundColor by if (isPressed || isFocused) colors.pressedBackgroundColor(enabled = enabled) else colors.backgroundColor(enabled = enabled)
-    val contentColor by if (isPressed || isFocused) colors.pressedContentColor(enabled = enabled) else colors.contentColor(enabled = enabled)
+    val backgroundColor by if (isPressed) colors.pressedBackgroundColor(enabled = enabled) else colors.backgroundColor(enabled = enabled)
+    val contentColor by if (isPressed) colors.pressedContentColor(enabled = enabled) else colors.contentColor(enabled = enabled)
 
-    val focusRequester = remember { FocusRequester() }
+    val interactionState by interactionSource.interactions.collectAsState(initial = null)
+    LaunchedEffect(key1 = interactionState) {
+        snapshotFlow { interactionState }
+            .collect {
+                LogError("doohyun") { "doohyun state change $it" }
 
-//    modifier
-//        .focusRequester(focusRequester)
-//        .onFocusChanged { isFocused = it.isFocused
-//        LogError("doohyun"){"doohyun ${it.isFocused}"}}
-//        .focusTarget()
-//        .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } }
-//        .onFocusEvent { LogError("doohyun"){"doohyun event ${it.isFocused}"}  }
+            }
+    }
 
-//    CompositionLocalProvider(LocalRippleTheme provides NoRippleTheme) {
+    CompositionLocalProvider(LocalRippleTheme provides NoRippleTheme) {
         Surface(
-            modifier = modifier.focusRequester(focusRequester)
-                .onFocusChanged { isFocused = it.isFocused
-                    LogError("doohyun"){"doohyun ${it.isFocused}"}}
-                .focusTarget()
-                .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } },
-//                .onFocusEvent { LogError("doohyun"){"doohyun event $it"}  },
+            modifier = modifier,
             shape = shape,
             color = backgroundColor,
             contentColor = contentColor.copy(alpha = 1f),
@@ -88,7 +83,7 @@ fun PressStateButton(
             }
         }
     }
-//}
+}
 
 @Stable
 interface PressStateButtonColors : ButtonColors {
