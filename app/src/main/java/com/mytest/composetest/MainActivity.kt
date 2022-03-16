@@ -36,10 +36,12 @@ import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.restful.RestFulTestActivity
+import com.mytest.composetest.sealed.SealedClassTest
 import com.mytest.composetest.ui.common.PressStateButton
 import com.mytest.composetest.ui.common.pressStateButtonColors
 
 import com.mytest.composetest.ui.theme.ComposeTestTheme
+import com.mytest.composetest.util.LogError
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
@@ -82,8 +84,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        test()
+    }
+
+    private fun test() {
+        val list1 = SealedClassTest::class.sealedSubclasses
+        val list2 = SealedClassTest::class.sealedSubclasses.mapNotNull { it.objectInstance }
+        LogError(TAG) {"list1:$list1"}
+        LogError(TAG) {"list2:$list2"}
+
+        val list3 = MainButton::class.sealedSubclasses
+        LogError(TAG) {"list3:$list3"}
     }
 }
+
+
 
 sealed interface MainButton
 object KtorTest : MainButton

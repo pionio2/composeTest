@@ -83,6 +83,9 @@ dependencies {
     def billing_version = "4.1.0"
     implementation "com.android.billingclient:billing-ktx:$billing_version"
 
+    // kotlin reflection
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-compiler:$hilt_version"
     // For Robolectric tests.
