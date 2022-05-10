@@ -35,7 +35,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
+import com.mytest.composetest.coroutinetest.CallbackFlowTest
 import com.mytest.composetest.restful.RestFulTestActivity
+import com.mytest.composetest.sealed.Result1
 import com.mytest.composetest.sealed.SealedClassTest
 import com.mytest.composetest.ui.common.PressStateButton
 import com.mytest.composetest.ui.common.pressStateButtonColors
@@ -47,6 +49,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
+import java.lang.NullPointerException
 import java.util.*
 import kotlin.coroutines.suspendCoroutine
 
@@ -59,6 +62,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private val testViewModel: TestViewModel by viewModels()
+    private val callbackFlowTestViewModel: CallbackFlowTestViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,17 +88,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        test()
-    }
-
-    private fun test() {
-        val list1 = SealedClassTest::class.sealedSubclasses
-        val list2 = SealedClassTest::class.sealedSubclasses.mapNotNull { it.objectInstance }
-        LogError(TAG) {"list1:$list1"}
-        LogError(TAG) {"list2:$list2"}
-
-        val list3 = MainButton::class.sealedSubclasses
-        LogError(TAG) {"list3:$list3"}
+//        callbackFlowTestViewModel.startCallbackFlowTest()
+//        callbackFlowTestViewModel.startCallbackFlowTest2().observe(this) {
+//            LogError(TAG) {it}
+//        }
+//        callbackFlowTestViewModel.startCallbackFlowTest3()
+        callbackFlowTestViewModel.startCallbackFlowTest4()
     }
 }
 
