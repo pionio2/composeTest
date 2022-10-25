@@ -36,6 +36,7 @@ import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.coroutinetest.CallbackFlowTest
+import com.mytest.composetest.coroutinetest.FlowTestViewModel
 import com.mytest.composetest.restful.RestFulTestActivity
 import com.mytest.composetest.sealed.Result1
 import com.mytest.composetest.sealed.SealedClassTest
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private val testViewModel: TestViewModel by viewModels()
+    private val flowTestViewModel: FlowTestViewModel by viewModels()
     private val callbackFlowTestViewModel: CallbackFlowTestViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,6 +96,9 @@ class MainActivity : ComponentActivity() {
 //        }
 //        callbackFlowTestViewModel.startCallbackFlowTest3()
         callbackFlowTestViewModel.startCallbackFlowTest4()
+
+        flowTestViewModel.setTestValue(100)
+        flowTestViewModel.printTestValue()
     }
 }
 

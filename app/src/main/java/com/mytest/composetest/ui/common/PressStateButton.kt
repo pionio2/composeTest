@@ -51,18 +51,17 @@ fun PressStateButton(
     }
 
     CompositionLocalProvider(LocalRippleTheme provides NoRippleTheme) {
+        rememberRipple()
         Surface(
+            onClick = onClick,
             modifier = modifier,
+            enabled = enabled,
             shape = shape,
             color = backgroundColor,
             contentColor = contentColor.copy(alpha = 1f),
             border = border,
             elevation = elevation?.elevation(enabled, interactionSource)?.value ?: 0.dp,
-            onClick = onClick,
-            enabled = enabled,
-            role = Role.Button,
-            interactionSource = interactionSource,
-            indication = rememberRipple()
+            interactionSource = interactionSource
         ) {
             CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
                 ProvideTextStyle(
