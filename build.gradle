@@ -5,6 +5,8 @@ buildscript {
         hilt_version = '2.42'
         kotlin_version = '1.7.10'
         ktor_version = '1.6.7'
+        room_version = '2.4.3'
+        paging_version = '3.1.1'
     }
     repositories {
         google()
