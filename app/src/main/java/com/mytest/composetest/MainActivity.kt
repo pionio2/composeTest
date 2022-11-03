@@ -32,6 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mytest.composetest.animation.AnimationMain
 import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
@@ -70,35 +71,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
-                MainScreen {
-                    when (it) {
-                        is KtorTest -> {
-                            Intent(this, RestFulTestActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }.also {
-                                startActivity(it)
-                            }
-                        }
-                        is InappTest -> {
-                            Intent(this, BillingTestActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }.also {
-                                startActivity(it)
-                            }
-                        }
-                    }
-                }
+//                MainScreen {
+//                    when (it) {
+//                        is KtorTest -> {
+//                            Intent(this, RestFulTestActivity::class.java).apply {
+//                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                            }.also {
+//                                startActivity(it)
+//                            }
+//                        }
+//                        is InappTest -> {
+//                            Intent(this, BillingTestActivity::class.java).apply {
+//                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                            }.also {
+//                                startActivity(it)
+//                            }
+//                        }
+//                    }
+//                }
+                AnimationMain()
             }
         }
-//        callbackFlowTestViewModel.startCallbackFlowTest()
-//        callbackFlowTestViewModel.startCallbackFlowTest2().observe(this) {
-//            LogError(TAG) {it}
-//        }
-//        callbackFlowTestViewModel.startCallbackFlowTest3()
-        callbackFlowTestViewModel.startCallbackFlowTest4()
-
-        flowTestViewModel.setTestValue(100)
-        flowTestViewModel.printTestValue()
     }
 }
 
