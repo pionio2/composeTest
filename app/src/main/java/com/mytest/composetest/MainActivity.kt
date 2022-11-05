@@ -32,12 +32,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.mytest.composetest.animation.AnimationMain
 import com.mytest.composetest.billing.ui.BillingTestActivity
 import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.coroutinetest.CallbackFlowTest
 import com.mytest.composetest.coroutinetest.FlowTestViewModel
+import com.mytest.composetest.friend.FriendsListMainView
+import com.mytest.composetest.friend.FriendsListViewModel
 import com.mytest.composetest.restful.RestFulTestActivity
 import com.mytest.composetest.sealed.Result1
 import com.mytest.composetest.sealed.SealedClassTest
@@ -66,11 +69,16 @@ class MainActivity : ComponentActivity() {
     private val testViewModel: TestViewModel by viewModels()
     private val flowTestViewModel: FlowTestViewModel by viewModels()
     private val callbackFlowTestViewModel: CallbackFlowTestViewModel by viewModels()
+    private val friendViewModel: FriendsListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ComposeTestTheme {
+                Scaffold { scaffoldPadding ->
+                    val friendPagingItems = friendViewModel.friendsListFlow.collectAsLazyPagingItems()
+                    FriendsListMainView(Modifier.padding(scaffoldPadding), friendPagingItems)
+                }
 //                MainScreen {
 //                    when (it) {
 //                        is KtorTest -> {
@@ -89,7 +97,7 @@ class MainActivity : ComponentActivity() {
 //                        }
 //                    }
 //                }
-                AnimationMain()
+//                AnimationMain()
             }
         }
     }

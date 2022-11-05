@@ -1,10 +1,9 @@
-package com.mytest.composetest.contact.db
+package com.mytest.composetest.friend.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mytest.composetest.util.LogError
-import java.util.stream.IntStream.range
 
 @Database(
     entities = [FriendEntity::class],

@@ -1,9 +1,9 @@
-package com.mytest.composetest.contact.db
+package com.mytest.composetest.friend.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.mytest.composetest.contact.db.FriendEntity.Companion.TABLE_FRIENDS
+import com.mytest.composetest.friend.db.FriendEntity.Companion.TABLE_FRIENDS
 
 @Entity(tableName = TABLE_FRIENDS)
 data class FriendEntity(
@@ -11,9 +11,9 @@ data class FriendEntity(
     @ColumnInfo(name = Columns.ID)
     var id: Long? = null,
     @ColumnInfo(name = Columns.NAME)
-    var securitiesCompany: String = "",
+    var name: String = "",
     @ColumnInfo(name = Columns.PHONE_NUMBER)
-    var numberOfShares: String = ""
+    var phoneNumber: String = ""
 ) {
     companion object {
         const val TABLE_FRIENDS = "friends"

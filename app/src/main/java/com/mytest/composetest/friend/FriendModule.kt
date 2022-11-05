@@ -1,8 +1,9 @@
-package com.mytest.composetest.contact.db
+package com.mytest.composetest.friend
 
 import android.app.Application
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.mytest.composetest.friend.db.FriendsDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,7 +12,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-class ContactModule {
+class FriendModule {
     @Provides
     @Singleton
     fun providesContactDatabase(application: Application): FriendsDatabase {
@@ -19,5 +20,9 @@ class ContactModule {
             .addCallback(FriendsDatabase.friendsDbCallback)
             .setJournalMode(RoomDatabase.JournalMode.TRUNCATE).build()
     }
+
+    @Provides
+    @Singleton
+    fun providesFriendRepository() = FriendsListRepository()
 }
 
