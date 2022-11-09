@@ -39,6 +39,7 @@ import com.mytest.composetest.calendar.EventInfo
 import com.mytest.composetest.calendar.EventItem
 import com.mytest.composetest.coroutinetest.CallbackFlowTest
 import com.mytest.composetest.coroutinetest.FlowTestViewModel
+import com.mytest.composetest.friend.ClickMovePage
 import com.mytest.composetest.friend.FriendsListMainView
 import com.mytest.composetest.friend.FriendsListViewModel
 import com.mytest.composetest.restful.RestFulTestActivity
@@ -76,8 +77,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             ComposeTestTheme {
                 Scaffold { scaffoldPadding ->
-                    val friendPagingItems = friendViewModel.friendsListFlow.collectAsLazyPagingItems()
-                    FriendsListMainView(Modifier.padding(scaffoldPadding), friendPagingItems)
+//                    val friendPagingItems = friendViewModel.friendsListFlow.collectAsLazyPagingItems()
+                    val friendPagingItems by friendViewModel.friendsListFlow.collectAsState()
+                    FriendsListMainView(Modifier.padding(scaffoldPadding), friendPagingItems) {
+                        when (it) {
+                            is ClickMovePage -> {
+                                //do something
+                            }
+                        }
+                    }
                 }
 //                MainScreen {
 //                    when (it) {

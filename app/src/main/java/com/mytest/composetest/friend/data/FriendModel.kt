@@ -6,5 +6,7 @@ import androidx.compose.runtime.Stable
 data class FriendModel(
     val id: Long,
     val name: String,
-    val phoneNumber: String
+    val phoneNumber: String,
+    val nameLabel: String,
+    val createDate: Long,
 )

@@ -20,9 +20,5 @@ class FriendModule {
             .addCallback(FriendsDatabase.friendsDbCallback)
             .setJournalMode(RoomDatabase.JournalMode.TRUNCATE).build()
     }
-
-    @Provides
-    @Singleton
-    fun providesFriendRepository() = FriendsListRepository()
 }
 

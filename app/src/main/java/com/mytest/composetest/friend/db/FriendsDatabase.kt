@@ -8,7 +8,8 @@ import com.mytest.composetest.util.LogError
 @Database(
     entities = [FriendEntity::class],
     version = 1,
-    exportSchema = false
+    exportSchema = false,
+    views = [FriendView::class]
 )
 abstract class FriendsDatabase : RoomDatabase() {
     abstract fun friendsDao(): FriendsDao
@@ -28,6 +29,10 @@ abstract class FriendsDatabase : RoomDatabase() {
         private fun insertDefaultData(db: SupportSQLiteDatabase) {
             try {
                 db.beginTransaction()
+                makeInsertSql(db, "pineapple", "011-5555-")
+                makeInsertSql(db, "startFruite", "011-6666-")
+                makeInsertSql(db, "melon", "011-7777-")
+                makeInsertSql(db, "watermelon", "011-8888-")
                 makeInsertSql(db, "둘리", "010-1111-")
                 makeInsertSql(db, "또치", "010-2222-")
                 makeInsertSql(db, "도우너", "010-3333-")
@@ -38,6 +43,20 @@ abstract class FriendsDatabase : RoomDatabase() {
                 makeInsertSql(db, "영희", "010-8888-")
                 makeInsertSql(db, "나애리", "010-9999-")
                 makeInsertSql(db, "하늬", "010-0000-")
+                makeInsertSql(db, "apple", "011-1111-")
+                makeInsertSql(db, "pear", "011-2222-")
+                makeInsertSql(db, "grape", "011-3333-")
+                makeInsertSql(db, "banana", "011-4444-")
+                makeInsertSql(db, "100", "012-0000-")
+                makeInsertSql(db, "200", "012-1111-")
+                makeInsertSql(db, "300", "012-2222-")
+                makeInsertSql(db, "400", "012-3333-")
+                makeInsertSql(db, "500", "012-4444-")
+                makeInsertSql(db, "500", "012-5555-")
+                makeInsertSql(db, "500", "012-6666-")
+                makeInsertSql(db, "#$", "013-0000-")
+                makeInsertSql(db, "&$%", "013-1111-")
+                makeInsertSql(db, "*!@", "013-2222-")
                 db.setTransactionSuccessful()
             } catch (e: Exception) {
                 LogError(TAG, e) { "Failed to insert initial data" }
@@ -47,10 +66,12 @@ abstract class FriendsDatabase : RoomDatabase() {
         }
 
         private fun makeInsertSql(db: SupportSQLiteDatabase, name: String, phonePrefix: String) {
-            (1..30).forEach {
+            (1..100).forEach {
                 val phoneNumber = phonePrefix + it.toString().padStart(4, '0')
-                val sql = "INSERT INTO ${FriendEntity.TABLE_FRIENDS} (${FriendEntity.Columns.NAME},${FriendEntity.Columns.PHONE_NUMBER}) VALUES (?,?)"
-                db.execSQL(sql, arrayOf("$name$it", phoneNumber))
+                val sql = "INSERT INTO ${FriendEntity.TABLE_FRIENDS} (" +
+                        "${FriendEntity.Columns.NAME}, ${FriendEntity.Columns.PHONE_NUMBER}, ${FriendEntity.Columns.CREATE_DATE}) " +
+                        "VALUES (?,?,?)"
+                db.execSQL(sql, arrayOf("$name$it", phoneNumber, System.currentTimeMillis()))
             }
         }
     }
