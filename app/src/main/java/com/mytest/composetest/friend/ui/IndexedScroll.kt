@@ -7,11 +7,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -22,18 +26,60 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mytest.composetest.ui.theme.Black40
-import com.mytest.composetest.ui.theme.White40
-import com.mytest.composetest.util.LogDebug
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
-import java.lang.Math.abs
 import kotlin.math.floor
 
 const val INVALID_VALUE = -1
-const val MIDDLE_DOT = "\u2022"
+
+sealed interface IndexLabel
+data class TextLabel(val label: String) : IndexLabel
+data class ImageLabel(val drawableResId: Int) : IndexLabel
+data class IconLabel(val imageVector: ImageVector) : IndexLabel
+
+object IndexedScroll {
+    enum class ScrollIndexType(val labelList: List<IndexLabel>) {
+        KOREAN_ENGLISH(
+            listOf(
+                TextLabel("ㄱ"),
+                TextLabel("ㄴ"),
+                TextLabel("ㄷ"),
+                TextLabel("ㄹ"),
+                TextLabel("ㅁ"),
+                TextLabel("ㅂ"),
+                TextLabel("ㅅ"),
+                TextLabel("ㅇ"),
+                TextLabel("ㅈ"),
+                TextLabel("ㅊ"),
+                TextLabel("ㅋ"),
+                TextLabel("ㅌ"),
+                TextLabel("ㅍ"),
+                TextLabel("ㅎ"),
+                TextLabel("A"),
+                TextLabel("F"),
+                TextLabel("K"),
+                TextLabel("P"),
+                TextLabel("U"),
+                TextLabel("Z"),
+                TextLabel("#")
+            )
+        ),
+        FAVORITE(listOf(IconLabel(Icons.Filled.Star))),
+        SEARCH(listOf(IconLabel(Icons.Filled.Search)))
+    }
+
+    fun getIndexLabel(indexTypes: List<ScrollIndexType>): List<IndexLabel> {
+        val labelList = mutableListOf<IndexLabel>()
+        indexTypes.forEach {
+            labelList.addAll(it.labelList)
+        }
+        return labelList
+    }
+}
 
 /**
  * 화면 오른쪽에 스크롤바를 표시하고, 선택시 중앙에 선택된 문자를 보여준다.
+ * @param onHovered: 손으로 dragging 할때 해당 글자의 list index를 담아 호출된다.
  */
 @Composable
 fun IndexedScroll(
@@ -43,12 +89,11 @@ fun IndexedScroll(
     bgColor: Color = Black40,
     onHovered: (Int) -> Unit
 ) {
-    // 중앙에 보여질 Character 값
-    var centerCharacter by remember { mutableStateOf("") }
-    // 중앙에 보여질 Image 값
-    var centerImage by remember { mutableStateOf(INVALID_VALUE) }
+    // 중앙에 보여질 Character or Image 값
+    var centerBox by remember { mutableStateOf<IndexLabel?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // 스크롤바 표시
         IndexedScrollBar(
             modifier = Modifier.align(Alignment.TopEnd),
             scrollbarWidth = scrollbarWidth,
@@ -56,30 +101,34 @@ fun IndexedScroll(
             labelList = labelList
         ) { index, isDragging ->
             if (isDragging) {
-                when (val indexLabel = labelList[index]) {
-                    is TextLabel -> centerCharacter = indexLabel.label
-                    is ImageLabel -> centerImage = indexLabel.drawableResId
-                }
+                centerBox = labelList[index]
                 onHovered(index)
             } else {
-                centerCharacter = ""
-                centerImage = INVALID_VALUE
+                centerBox = null
             }
         }
 
         // 스크롤시 현재 선택된 Character 가운데 표시
-        if (centerCharacter.isBlank().not()) {
-            CenterCharacterBox(modifier = Modifier.align(Alignment.Center), centerCharacter)
-        }
-
-        if (centerImage != INVALID_VALUE) {
-            Icon(
-                modifier = Modifier
-                    .size(30.dp, 30.dp)
-                    .align(Alignment.Center),
-                painter = painterResource(id = centerImage),
-                contentDescription = ""
-            )
+        centerBox?.let { indexLabel ->
+            CenterIconBox(modifier = Modifier.align(Alignment.Center)) {
+                when (indexLabel) {
+                    is TextLabel -> Text(text = indexLabel.label, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 25.sp)
+                    is ImageLabel -> Icon(
+                        modifier = Modifier
+                            .size(30.dp, 30.dp)
+                            .align(Alignment.Center),
+                        painter = painterResource(id = indexLabel.drawableResId),
+                        contentDescription = ""
+                    )
+                    is IconLabel -> Icon(
+                        modifier = Modifier
+                            .size(30.dp, 30.dp)
+                            .align(Alignment.Center),
+                        imageVector = indexLabel.imageVector,
+                        contentDescription = ""
+                    )
+                }
+            }
         }
     }
 }
@@ -116,7 +165,6 @@ fun IndexedScrollBar(
         var draggedItemIndex by remember { mutableStateOf(INVALID_VALUE) }
 
         val currentOnHovered by rememberUpdatedState(onHovered)
-
         val density = LocalDensity.current
 
         Surface(
@@ -157,12 +205,21 @@ fun IndexedScrollBar(
                             currentDraggedItemIndex = draggedItemIndex,
                             itemTextSizeDp = itemTextSizeDp,
                         )
-                        is ImageLabel -> Icon(
+                        is ImageLabel -> ImageLabelBox(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(itemHeightDp),
-                            painter = painterResource(id = indexLabel.drawableResId),
-                            contentDescription = ""
+                            drawableResId = indexLabel.drawableResId,
+                            myIndex = index,
+                            currentDraggedItemIndex = draggedItemIndex
+                        )
+                        is IconLabel -> ImageLabelBox(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(itemHeightDp),
+                            imageVector = indexLabel.imageVector,
+                            myIndex = index,
+                            currentDraggedItemIndex = draggedItemIndex
                         )
                     }
                 }
@@ -195,22 +252,7 @@ fun TextLabelBox(
     currentDraggedItemIndex: Int = INVALID_VALUE,
     itemTextSizeDp: Dp
 ) {
-    val distanceOfSelectedIndex by remember(myIndex, currentDraggedItemIndex) {
-        derivedStateOf {
-            // 선택된 index와의 거리에 따라 alpah값과 font weight를 처리한다.
-            if (currentDraggedItemIndex != INVALID_VALUE) {
-                when (kotlin.math.abs(currentDraggedItemIndex - myIndex)) {
-                    0 -> Pair(1f, FontWeight.Bold)
-                    1 -> Pair(0.3f, FontWeight.Normal)
-                    2 -> Pair(0.5f, FontWeight.Normal)
-                    3 -> Pair(0.7f, FontWeight.Normal)
-                    else -> Pair(1f, FontWeight.Normal)
-                }
-            } else {
-                Pair(1f, FontWeight.Normal)
-            }
-        }
-    }
+    val distanceOfSelectedIndex by getAlphaAndFontWeightByDistance(myIndex, currentDraggedItemIndex)
 
     Box(modifier = modifier) {
         Text(
@@ -226,11 +268,61 @@ fun TextLabelBox(
     }
 }
 
+// 스크롤에서 사용하는 이미지 표기
+@Composable
+fun ImageLabelBox(
+    modifier: Modifier = Modifier,
+    drawableResId: Int = INVALID_VALUE,
+    imageVector: ImageVector? = null,
+    myIndex: Int = INVALID_VALUE,
+    currentDraggedItemIndex: Int = INVALID_VALUE
+) {
+    if (drawableResId == INVALID_VALUE && imageVector == null) {
+        return
+    }
+
+    val distanceOfSelectedIndex by getAlphaAndFontWeightByDistance(myIndex, currentDraggedItemIndex)
+
+    if (drawableResId != INVALID_VALUE) {
+        Icon(
+            modifier = modifier
+                .alpha(distanceOfSelectedIndex.first),
+            painter = painterResource(id = drawableResId),
+            contentDescription = ""
+        )
+    } else if (imageVector != null) {
+        Icon(
+            modifier = modifier
+                .alpha(distanceOfSelectedIndex.first),
+            imageVector = imageVector,
+            contentDescription = ""
+        )
+    }
+}
+
+// 현재 내 위치(index)와 dragging되고 있는 item index간에 차이에 따른 alpha값과 weight를 반환한다.
+@Composable
+fun getAlphaAndFontWeightByDistance(myIndex: Int, currentDraggedItemIndex: Int): State<Pair<Float, FontWeight>> {
+    return produceState(initialValue = Pair(1f, FontWeight.Normal), myIndex, currentDraggedItemIndex) {
+        value = if (currentDraggedItemIndex != INVALID_VALUE) {
+            when (kotlin.math.abs(currentDraggedItemIndex - myIndex)) {
+                0 -> Pair(1f, FontWeight.Bold)
+                1 -> Pair(0.3f, FontWeight.Normal)
+                2 -> Pair(0.5f, FontWeight.Normal)
+                3 -> Pair(0.7f, FontWeight.Normal)
+                else -> Pair(1f, FontWeight.Normal)
+            }
+        } else {
+            Pair(1f, FontWeight.Normal)
+        }
+    }
+}
+
 // 가운데 표시되는 Character 표시
 @Composable
-fun CenterCharacterBox(
+fun CenterIconBox(
     modifier: Modifier = Modifier,
-    label: String
+    content: @Composable () -> Unit
 ) {
     Surface(
         modifier = modifier.size(50.dp),
@@ -238,54 +330,26 @@ fun CenterCharacterBox(
         shape = CircleShape
     ) {
         Box(modifier = modifier.padding(3.dp), contentAlignment = Alignment.Center) {
-            Text(text = label, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 25.sp)
+            content()
         }
     }
 }
-
-sealed interface IndexLabel
-data class TextLabel(val label: String) : IndexLabel
-data class ImageLabel(val drawableResId: Int) : IndexLabel
-
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     Column {
-        IndexedScrollBar(
-            labelList = listOf(
-                TextLabel("ㄱ"),
-                TextLabel("ㄴ"),
-                TextLabel("ㄷ"),
-                TextLabel("ㄹ"),
-                TextLabel("ㅁ"),
-                TextLabel("ㅂ"),
-                TextLabel("ㅅ"),
-                TextLabel("ㅇ"),
-                TextLabel("ㅈ"),
-                TextLabel("ㅊ"),
-                TextLabel("ㅋ"),
-                TextLabel("ㅌ"),
-                TextLabel("ㅍ"),
-                TextLabel("ㅎ"),
-                TextLabel("#"),
-                TextLabel("ㄱ"),
-                TextLabel("ㄴ"),
-                TextLabel("ㄷ"),
-                TextLabel("ㄹ"),
-                TextLabel("ㅁ"),
-                TextLabel("ㅂ"),
-                TextLabel("ㅅ"),
-                TextLabel("ㅇ"),
-                TextLabel("ㅈ"),
-                TextLabel("ㅊ"),
-                TextLabel("ㅋ"),
-                TextLabel("ㅌ"),
-                TextLabel("ㅍ"),
-                TextLabel("ㅎ"),
-                TextLabel("*"),
+        IndexedScroll(
+            labelList = IndexedScroll.getIndexLabel(
+                listOf(
+                    IndexedScroll.ScrollIndexType.SEARCH,
+                    IndexedScroll.ScrollIndexType.FAVORITE,
+                    IndexedScroll.ScrollIndexType.KOREAN_ENGLISH
+                )
             )
-        ) { _, _ -> }
-//        CenterCharacterBox(label = "ㄱ")
+        ) {
+
+        }
+        Icon(imageVector = Icons.Filled.Search, contentDescription = "")
     }
 }
