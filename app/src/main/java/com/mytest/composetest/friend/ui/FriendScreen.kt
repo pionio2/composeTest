@@ -135,10 +135,14 @@ fun FriendsList(modifier: Modifier = Modifier, friendsList: List<FriendModel>) {
             IndexedScroll(
                 modifier = Modifier.padding(top = 5.dp, bottom = 5.dp, end = 5.dp),
                 labelList = IndexedScroll.getIndexLabel(
-                    listOf(IndexedScroll.ScrollIndexType.SEARCH,
+                    listOf(
+                        IndexedScroll.ScrollIndexType.SEARCH,
                         IndexedScroll.ScrollIndexType.FAVORITE,
-                        IndexedScroll.ScrollIndexType.KOREAN_ENGLISH)
-            ), onHovered = {})
+                        IndexedScroll.ScrollIndexType.KOREAN_ENGLISH
+                    )
+                ),
+                scrollState = scrollState,
+                onHovered = {})
         }
     }
 }

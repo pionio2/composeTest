@@ -1,7 +1,11 @@
 package com.mytest.composetest.friend.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mytest.composetest.ui.theme.Black40
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlin.math.floor
 
@@ -79,56 +84,80 @@ object IndexedScroll {
 
 /**
  * 화면 오른쪽에 스크롤바를 표시하고, 선택시 중앙에 선택된 문자를 보여준다.
+ * @param scrollState 스크롤 사용/미사용시 자동 visibility 제어를 위해 넘겨 받는다. null입력시 항상 보여진다.
  * @param onHovered: 손으로 dragging 할때 해당 글자의 list index를 담아 호출된다.
  */
 @Composable
 fun IndexedScroll(
     modifier: Modifier = Modifier,
     labelList: List<IndexLabel>,
+    scrollState: LazyListState? = null,
     scrollbarWidth: Dp = 20.dp,
-    bgColor: Color = Black40,
+    scrollbarBgColor: Color = Black40,
     onHovered: (Int) -> Unit
 ) {
     // 중앙에 보여질 Character or Image 값
     var centerBox by remember { mutableStateOf<IndexLabel?>(null) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // 스크롤바 표시
-        IndexedScrollBar(
-            modifier = Modifier.align(Alignment.TopEnd),
-            scrollbarWidth = scrollbarWidth,
-            bgColor = bgColor,
-            labelList = labelList
-        ) { index, isDragging ->
-            if (isDragging) {
-                centerBox = labelList[index]
-                onHovered(index)
-            } else {
-                centerBox = null
-            }
-        }
+    // 스크롤에 따른 index bar visibility 처리
+    var visibility by remember { mutableStateOf(false) }
 
-        // 스크롤시 현재 선택된 Character 가운데 표시
-        centerBox?.let { indexLabel ->
-            CenterIconBox(modifier = Modifier.align(Alignment.Center)) {
-                when (indexLabel) {
-                    is TextLabel -> Text(text = indexLabel.label, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 25.sp)
-                    is ImageLabel -> Icon(
-                        modifier = Modifier
-                            .size(30.dp, 30.dp)
-                            .align(Alignment.Center),
-                        painter = painterResource(id = indexLabel.drawableResId),
-                        contentDescription = ""
-                    )
-                    is IconLabel -> Icon(
-                        modifier = Modifier
-                            .size(30.dp, 30.dp)
-                            .align(Alignment.Center),
-                        imageVector = indexLabel.imageVector,
-                        contentDescription = ""
-                    )
+    AnimatedVisibility(
+        visible = visibility,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier.fillMaxSize()
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 스크롤바 표시
+            IndexedScrollBar(
+                modifier = Modifier.align(Alignment.TopEnd),
+                scrollbarWidth = scrollbarWidth,
+                bgColor = scrollbarBgColor,
+                labelList = labelList
+            ) { index, isDragging ->
+                if (isDragging) {
+                    centerBox = labelList[index]
+                    onHovered(index)
+                } else {
+                    centerBox = null
                 }
             }
+
+            // 스크롤시 현재 선택된 Character 가운데 표시
+            centerBox?.let { indexLabel ->
+                CenterIconBox(modifier = Modifier.align(Alignment.Center)) {
+                    when (indexLabel) {
+                        is TextLabel -> Text(text = indexLabel.label, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 25.sp)
+                        is ImageLabel -> Icon(
+                            modifier = Modifier
+                                .size(30.dp, 30.dp)
+                                .align(Alignment.Center),
+                            painter = painterResource(id = indexLabel.drawableResId),
+                            contentDescription = ""
+                        )
+                        is IconLabel -> Icon(
+                            modifier = Modifier
+                                .size(30.dp, 30.dp)
+                                .align(Alignment.Center),
+                            imageVector = indexLabel.imageVector,
+                            contentDescription = ""
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Visibility 처리, indexbar를 스크롤중이거나, 리스트를 스크롤중에는 표시한다.
+    // 아무런 action이 없는 경우 2초 이후 사라진다.
+    // scrollState를 넣지 않은 경우 무조건 true로 처리하여 보여준다.
+    LaunchedEffect(centerBox, scrollState?.isScrollInProgress) {
+        if (centerBox != null || scrollState?.isScrollInProgress == true || scrollState == null) {
+            visibility = true
+        } else {
+            delay(2000)
+            visibility = false
         }
     }
 }
@@ -346,7 +375,7 @@ fun DefaultPreview() {
                     IndexedScroll.ScrollIndexType.FAVORITE,
                     IndexedScroll.ScrollIndexType.KOREAN_ENGLISH
                 )
-            )
+            ),
         ) {
 
         }

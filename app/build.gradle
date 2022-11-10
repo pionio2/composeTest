@@ -71,6 +71,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.5.1"
+    implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
     //Ktor
 //    implementation "io.ktor:ktor-client-okhttp:$ktor_version"
@@ -81,7 +82,7 @@ dependencies {
     implementation "io.ktor:ktor-client-logging-jvm:$ktor_version"
 
     // 인앱결제
-    def billing_version = "5.0.0"
+    def billing_version = "5.1.0"
     implementation "com.android.billingclient:billing-ktx:$billing_version"
 
     // kotlin reflection
@@ -108,8 +109,8 @@ dependencies {
 
 
     testImplementation 'junit:junit:'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 }
