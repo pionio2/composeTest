@@ -69,6 +69,33 @@ object IndexedScroll {
                 TextLabel("#")
             )
         ),
+        ENGLISH_KOREAN(
+            listOf(
+                TextLabel("A"),
+                TextLabel("B"),
+                TextLabel("C"),
+                TextLabel("D"),
+                TextLabel("E"),
+                TextLabel("F"),
+                TextLabel("G"),
+                TextLabel("H"),
+                TextLabel("I"),
+                TextLabel("K"),
+                TextLabel("L"),
+                TextLabel("M"),
+                TextLabel("O"),
+                TextLabel("R"),
+                TextLabel("S"),
+                TextLabel("T"),
+                TextLabel("U"),
+                TextLabel("Z"),
+                TextLabel("ㄱ"),
+                TextLabel("ㅂ"),
+                TextLabel("ㅇ"),
+                TextLabel("ㅊ"),
+                TextLabel("#")
+            )
+        ),
         FAVORITE(listOf(IconLabel(Icons.Filled.Star))),
         SEARCH(listOf(IconLabel(Icons.Filled.Search)))
     }

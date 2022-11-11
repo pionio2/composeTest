@@ -3,14 +3,8 @@ package com.mytest.composetest.friend
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
-import com.mytest.composetest.friend.data.FriendModel
-import com.mytest.composetest.friend.data.FriendPagingSource
 import com.mytest.composetest.friend.data.toFriendModel
-import com.mytest.composetest.friend.db.FriendEntity
+import com.mytest.composetest.friend.db.FriendSortOrder
 import com.mytest.composetest.friend.db.FriendsDatabase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -36,8 +30,10 @@ class FriendsListViewModel @Inject constructor(
 //            .toFriendModel()
 //            .cachedIn(viewModelScope)
 
+        //친구 목록 order는 (한글/영어/특수문자)는 언어 설정을 따른다.
+        val friendsSortOrder = FriendSortOrder(FriendSortOrder.OrderType.HANGUL_ENGLISH_OTHERS)
         //친구 목록을 가져온다.
-        friendsListFlow = friendRepository.getFriendsFlow().toFriendModel()
+        friendsListFlow = friendRepository.getFriendsFlow(friendsSortOrder).toFriendModel()
             .map {
                 FriendLoadSuccess(it) as FriendLoadingStatus
             }.catch { cause -> emit(FriendLoadFailed(cause)) }

@@ -55,9 +55,9 @@ abstract class FriendsDao {
         loadSize: Int,
         friendOrder: FriendSortOrder = FriendSortOrder()
     ) = getFriendsForPaging(
-        page, loadSize, friendOrder.getHangulOrder(),
-        friendOrder.getEnglishOrder(),
-        friendOrder.getSpecialCharacterOrder()
+        page, loadSize, friendOrder.hangulOrder,
+        friendOrder.englishOrder,
+        friendOrder.specialCharacterOrder
     )
 
     /**
@@ -86,8 +86,8 @@ abstract class FriendsDao {
 
     // paging 지원 - 친구 리스트를 가져온다.
     fun getAllFriends(friendOrder: FriendSortOrder) = getAllFriends(
-        friendOrder.getHangulOrder(),
-        friendOrder.getEnglishOrder(),
-        friendOrder.getSpecialCharacterOrder()
+        friendOrder.hangulOrder,
+        friendOrder.englishOrder,
+        friendOrder.specialCharacterOrder
     )
 }

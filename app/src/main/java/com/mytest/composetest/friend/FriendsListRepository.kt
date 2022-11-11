@@ -26,5 +26,5 @@ class FriendsListRepository @Inject constructor(private val friendDb: FriendsDat
         ).flow
     }
 
-    fun getFriendsFlow(friendOrder: FriendSortOrder = FriendSortOrder()) = friendDb.friendsDao().getAllFriends(friendOrder)
+    fun getFriendsFlow(friendOrder: FriendSortOrder) = friendDb.friendsDao().getAllFriends(friendOrder)
 }
