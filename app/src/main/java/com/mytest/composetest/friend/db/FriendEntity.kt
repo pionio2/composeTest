@@ -20,6 +20,10 @@ data class FriendEntity(
     var name: String = "",
     @ColumnInfo(name = Columns.PHONE_NUMBER)
     var phoneNumber: String = "",
+    @ColumnInfo(name = Columns.IS_FAVORITE, defaultValue = Columns.NO.toString())
+    var isFavorite: Int? = null,
+    @ColumnInfo(name = Columns.IS_ADOT_USER, defaultValue = Columns.NO.toString())
+    var isAdotUser: Int? = null,
     @ColumnInfo(name = Columns.CREATE_DATE)
     var createDate: Long = System.currentTimeMillis(),
 ) {
@@ -32,7 +36,12 @@ data class FriendEntity(
             const val ID = "_id"
             const val NAME = "name"
             const val PHONE_NUMBER = "phone_number"
+            const val IS_FAVORITE = "is_favorite"
+            const val IS_ADOT_USER = "is_adot_user"
             const val CREATE_DATE = "cr_date"
+
+            const val NO = 0
+            const val YES = 1
         }
     }
 }

@@ -69,12 +69,12 @@ abstract class FriendsDao {
         """
             SELECT *,
                 CASE
-                    WHEN ${FriendView.Columns.FIRST_CHAR} >='ㄱ' and ${FriendView.Columns.FIRST_CHAR} <='힣' THEN :hangulOrder
-                    WHEN ${FriendView.Columns.FIRST_CHAR} >='A' and ${FriendView.Columns.FIRST_CHAR} <='z' THEN :englishOrder
+                    WHEN ${FriendView.Columns.LABEL_BUCKET} = ${FriendView.KOREA_LABEL_BUCKET} THEN :hangulOrder
+                    WHEN ${FriendView.Columns.LABEL_BUCKET} = ${FriendView.ENGLISH_LABEL_BUCKET} THEN :englishOrder
                     ELSE :specialCharOrder
                 END AS label_order
             FROM ${FriendView.VIEW_FRIENDS_LIST} 
-            ORDER BY label_order, ${FriendEntity.Columns.NAME}
+            ORDER BY label_order, ${FriendEntity.Columns.NAME} COLLATE LOCALIZED
         """
     )
     protected abstract fun getAllFriends(

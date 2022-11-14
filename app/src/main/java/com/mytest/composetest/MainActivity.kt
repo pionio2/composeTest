@@ -78,8 +78,8 @@ class MainActivity : ComponentActivity() {
             ComposeTestTheme {
                 Scaffold { scaffoldPadding ->
 //                    val friendPagingItems = friendViewModel.friendsListFlow.collectAsLazyPagingItems()
-                    val friendPagingItems by friendViewModel.friendsListFlow.collectAsState()
-                    FriendsListMainView(Modifier.padding(scaffoldPadding), friendPagingItems) {
+                    val friendItems by friendViewModel.friendsListFlow.collectAsState()
+                    FriendsListMainView(Modifier.padding(scaffoldPadding), friendItems) {
                         when (it) {
                             is ClickMovePage -> {
                                 //do something

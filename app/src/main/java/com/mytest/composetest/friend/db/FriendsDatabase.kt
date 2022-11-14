@@ -57,6 +57,10 @@ abstract class FriendsDatabase : RoomDatabase() {
                 makeInsertSql(db, "#$", "013-0000-")
                 makeInsertSql(db, "&$%", "013-1111-")
                 makeInsertSql(db, "*!@", "013-2222-")
+                makeInsertSql(db, "가가멜", "013-3333-",1, 0, 1)
+                makeInsertSql(db, "Schtroumpf", "013-3333-",1, 0, 1)
+                makeInsertSql(db, "에이닷친구", "013-4444-",0, 1, 1)
+                makeInsertSql(db, "Adot Friend", "013-4444-",0, 1, 1)
                 db.setTransactionSuccessful()
             } catch (e: Exception) {
                 LogError(TAG, e) { "Failed to insert initial data" }
@@ -65,13 +69,20 @@ abstract class FriendsDatabase : RoomDatabase() {
             }
         }
 
-        private fun makeInsertSql(db: SupportSQLiteDatabase, name: String, phonePrefix: String) {
-            (1..100).forEach {
+        private fun makeInsertSql(db: SupportSQLiteDatabase,
+                                  name: String,
+                                  phonePrefix: String,
+                                  isFavorite: Int = 0,
+                                  isAdotUser: Int = 0,
+                                  repeat: Int = 100) {
+            (1..repeat).forEach {
                 val phoneNumber = phonePrefix + it.toString().padStart(4, '0')
-                val sql = "INSERT INTO ${FriendEntity.TABLE_FRIENDS} (" +
-                        "${FriendEntity.Columns.NAME}, ${FriendEntity.Columns.PHONE_NUMBER}, ${FriendEntity.Columns.CREATE_DATE}) " +
-                        "VALUES (?,?,?)"
-                db.execSQL(sql, arrayOf("$name$it", phoneNumber, System.currentTimeMillis()))
+                val sql = """ INSERT INTO ${FriendEntity.TABLE_FRIENDS} (
+                        ${FriendEntity.Columns.NAME}, ${FriendEntity.Columns.PHONE_NUMBER}, ${FriendEntity.Columns.IS_FAVORITE},
+                        ${FriendEntity.Columns.IS_ADOT_USER}, ${FriendEntity.Columns.CREATE_DATE})
+                        VALUES (?,?,?,?,?)
+                        """
+                db.execSQL(sql, arrayOf("$name$it", phoneNumber, isFavorite, isAdotUser, System.currentTimeMillis()))
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.*
@@ -97,7 +98,8 @@ object IndexedScroll {
             )
         ),
         FAVORITE(listOf(IconLabel(Icons.Filled.Star))),
-        SEARCH(listOf(IconLabel(Icons.Filled.Search)))
+        SEARCH(listOf(IconLabel(Icons.Filled.Search))),
+        ADOT(listOf(IconLabel(Icons.Filled.School)))
     }
 
     fun getIndexLabel(indexTypes: List<ScrollIndexType>): List<IndexLabel> {

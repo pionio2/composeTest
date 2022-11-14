@@ -3,6 +3,7 @@ package com.mytest.composetest.friend.db
 import androidx.room.ColumnInfo
 import androidx.room.DatabaseView
 import androidx.room.Embedded
+import com.mytest.composetest.friend.FriendsListViewModel
 
 /**
  * 초성 및 정렬 기준을 포함한 데이터를 반환한다.
@@ -50,19 +51,18 @@ import androidx.room.Embedded
             when first_char >='ㅌ' and first_char <='팋' then 'ㅌ'
             when first_char >='ㅍ' and first_char <='핗' then 'ㅍ'
             when first_char >='ㅎ' and first_char <='힣' then 'ㅎ'
-            when first_char >='A' and first_char <='z' then lower(first_char)
+            when first_char >='A' and first_char <='z' then upper(first_char)
             else '#'
         end as name_label,
         case
-            when first_char >='ㄱ' and first_char <='힣' then 1
-            when first_char >='A' and first_char <='z' then 2
-            else 3
+            when first_char >='ㄱ' and first_char <='힣' then ${FriendView.KOREA_LABEL_BUCKET}
+            when first_char >='A' and first_char <='z' then ${FriendView.ENGLISH_LABEL_BUCKET}
+            else ${FriendView.OTHER_LABEL_BUCKET}
         end as label_bucket
     from (
         select *, substr(name, 1, 1) as first_char
         from friends
-    )
-    order by label_bucket, name
+    )    
     """
 )
 data class FriendView(
@@ -71,15 +71,21 @@ data class FriendView(
     val firstChar: String,
     @ColumnInfo(name = Columns.NAME_LABEL)
     val nameLabel: String,
+    @ColumnInfo(name = Columns.LABEL_BUCKET)
+    val labelBucket: Int,
 ) {
     companion object {
         const val VIEW_FRIENDS_LIST = "v_friends"
+        const val KOREA_LABEL_BUCKET = 1
+        const val ENGLISH_LABEL_BUCKET = 2
+        const val OTHER_LABEL_BUCKET = 3
     }
 
     class Columns {
         companion object {
             const val FIRST_CHAR = "first_char"
             const val NAME_LABEL = "name_label"
+            const val LABEL_BUCKET = "label_bucket"
         }
     }
 }
