@@ -1,5 +1,6 @@
 package com.mytest.composetest.friend
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -126,6 +128,7 @@ fun FriendsPagingListMainView(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FriendsList(
     modifier: Modifier = Modifier,
@@ -145,11 +148,12 @@ fun FriendsList(
         Box {
             // 목록 표시
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("friend_list"),
                 contentPadding = PaddingValues(horizontal = 15.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 state = scrollState
-
             ) {
                 itemsIndexed(
                     key = { _, friend -> friend.uiId },
@@ -157,8 +161,19 @@ fun FriendsList(
                     contentType = { _, item -> item.uiType } // LazyColumn 속도 향상을 위한 type 명시
                 ) { index, item ->
                     when (item) {
-                        is FriendUiHeader -> FriendHeader(friend = item)
-                        is FriendUiItem -> FriendCard(friend = item, index = index)
+                        is FriendUiHeader -> FriendHeader(
+                            modifier = Modifier
+                                .testTag("friend_item")
+                                .animateItemPlacement(),
+                            friend = item
+                        )
+                        is FriendUiItem -> FriendCard(
+                            modifier = Modifier
+                                .testTag("friend_item")
+                                .animateItemPlacement(),
+                            friend = item,
+                            index = index
+                        )
                     }
                 }
             }
@@ -166,7 +181,7 @@ fun FriendsList(
             IndexedScroll(
                 modifier = Modifier.padding(top = 5.dp, bottom = 5.dp, end = 5.dp),
                 labelList = IndexedScroll.getIndexLabel(labelList),
-                scrollState = scrollState,
+                isScrollState = scrollState.isScrollInProgress,
             ) {
                 coroutineScope.launch { scrollState.scrollToItem(labelScrollMap.getOrDefault(it, POSITION_START)) }
             }

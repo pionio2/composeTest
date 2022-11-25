@@ -120,7 +120,7 @@ object IndexedScroll {
 fun IndexedScroll(
     modifier: Modifier = Modifier,
     labelList: List<IndexLabel>,
-    scrollState: LazyListState? = null,
+    isScrollState: Boolean = false,
     scrollbarWidth: Dp = 20.dp,
     scrollbarBgColor: Color = Black40,
     onHovered: (Int) -> Unit
@@ -181,8 +181,8 @@ fun IndexedScroll(
     // Visibility 처리, indexbar를 스크롤중이거나, 리스트를 스크롤중에는 표시한다.
     // 아무런 action이 없는 경우 2초 이후 사라진다.
     // scrollState를 넣지 않은 경우 무조건 true로 처리하여 보여준다.
-    LaunchedEffect(centerBox, scrollState?.isScrollInProgress) {
-        if (centerBox != null || scrollState?.isScrollInProgress == true || scrollState == null) {
+    LaunchedEffect(centerBox, isScrollState) {
+        if (centerBox != null || isScrollState) {
             visibility = true
         } else {
             delay(2000)

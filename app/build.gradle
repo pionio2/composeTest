@@ -31,6 +31,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         benchmark {
+            initWith buildTypes.release
             signingConfig signingConfigs.debug
             matchingFallbacks = ['release']
             debuggable false
@@ -42,9 +43,13 @@ android {
     }
     kotlinOptions {
         jvmTarget = '11'
-        freeCompilerArgs += '-Xopt-in=kotlin.RequiresOptIn'
-        // Enable experimental coroutines APIs, including Flow
-        freeCompilerArgs += '-Xopt-in=kotlin.Experimental'
+        freeCompilerArgs += ["-Xopt-in=kotlin.RequiresOptIn",
+                             // Enable experimental coroutines APIs, including Flow
+                             "-Xopt-in=kotlin.Experimental",
+                             // Compose 디버깅
+                             "-P",
+                             "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=${rootProject.file(".").absolutePath}/compose_compile"
+        ]
     }
     buildFeatures {
         compose true
@@ -84,6 +89,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.5.1"
 
+    implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5"
+
 
     //Ktor
 //    implementation "io.ktor:ktor-client-okhttp:$ktor_version"
@@ -92,6 +99,7 @@ dependencies {
     implementation "io.ktor:ktor-client-json:$ktor_version"
     implementation "io.ktor:ktor-client-serialization-jvm:$ktor_version"
     implementation "io.ktor:ktor-client-logging-jvm:$ktor_version"
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // 인앱결제
     def billing_version = "5.1.0"
@@ -127,5 +135,6 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4"
     debugImplementation "androidx.compose.ui:ui-tooling"
     debugImplementation "androidx.compose.ui:ui-test-manifest"
+    androidTestImplementation "androidx.test.uiautomator:uiautomator:2.2.0"
 
 }
