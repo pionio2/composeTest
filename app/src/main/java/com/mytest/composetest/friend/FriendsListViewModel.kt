@@ -13,6 +13,7 @@ import com.mytest.composetest.friend.ui.IndexedScroll
 import com.mytest.composetest.util.LogDebug
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -49,7 +50,7 @@ class FriendsListViewModel @Inject constructor(
         friendsListFlow = friendRepository.getFriendsFlow(friendsSortOrder)
             .map { friendsList ->
                 LogDebug(TAG) { "Friends list loading start ${Thread.currentThread().name}" }
-                val friendsUiList = makeTotalList(friendsList)
+                val friendsUiList = makeTotalList(friendsList).toImmutableList()
                 LogDebug(TAG) { "Friends list loading complete ${Thread.currentThread().name}" }
                 FriendLoadSuccess(friendsUiList) as FriendLoadingStatus
             }

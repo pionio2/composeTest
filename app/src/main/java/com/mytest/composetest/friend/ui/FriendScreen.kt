@@ -31,6 +31,8 @@ import com.mytest.composetest.friend.ui.TextLabel
 import com.mytest.composetest.ui.theme.ComposeTestTheme
 import com.mytest.composetest.util.LogDebug
 import com.mytest.composetest.util.LogError
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -132,7 +134,7 @@ fun FriendsPagingListMainView(
 @Composable
 fun FriendsList(
     modifier: Modifier = Modifier,
-    friendsList: List<FriendUiModel>,
+    friendsList: ImmutableList<FriendUiModel>,
     searchIndexEnable: Boolean = true,
 ) {
     val scrollState = rememberLazyListState()
@@ -194,9 +196,9 @@ fun FriendsList(
 // e.g. 즐겨찾기 + 영어 + 한글
 @Composable
 fun getIndexScrollLabels(
-    friendsList: List<FriendUiModel>,
+    friendsList: ImmutableList<FriendUiModel>,
     searchIndexEnable: Boolean = true
-): State<List<IndexedScroll.ScrollIndexType>> {
+): State<ImmutableList<IndexedScroll.ScrollIndexType>> {
 
     // 초기값
     val initValue = mutableListOf<IndexedScroll.ScrollIndexType>()
@@ -204,7 +206,7 @@ fun getIndexScrollLabels(
 
     val context = LocalContext.current
 
-    return produceState(initialValue = initValue) {
+    return produceState(initialValue = initValue.toImmutableList()) {
         val list = mutableListOf<IndexedScroll.ScrollIndexType>()
         // 검색 아이콘 추가
         if (searchIndexEnable) list.add(IndexedScroll.ScrollIndexType.SEARCH)
@@ -232,7 +234,7 @@ fun getIndexScrollLabels(
             list.add(IndexedScroll.ScrollIndexType.KOREAN_ENGLISH)
         }
 
-        value = list
+        value = list.toImmutableList()
     }
 }
 
@@ -245,8 +247,8 @@ fun getIndexScrollLabels(
  */
 @Composable
 fun calculatePositionForLabel(
-    friendsList: List<FriendUiModel>,
-    labelList: List<IndexedScroll.ScrollIndexType>
+    friendsList: ImmutableList<FriendUiModel>,
+    labelList: ImmutableList<IndexedScroll.ScrollIndexType>
 ): State<Map<Int, Int>> {
     LogDebug(TAG) { "calculatePositionForLabel() -  start position calculating" }
     // 계산되기전 초기값은 empty map이다. 이때 scroll하면 null이 떨어지므로 0으로 이동해야함.
@@ -345,8 +347,6 @@ fun calculatePositionForLabel(
         value = calculatedMap
     }
 }
-
-data class IndexInfo(val scrollIndexType: IndexedScroll.ScrollIndexType, val labelName: String?, val startPosition: Int, val endPosition: Int)
 
 // item 친구 목록
 @Composable

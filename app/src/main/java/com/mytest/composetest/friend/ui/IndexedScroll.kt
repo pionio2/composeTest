@@ -19,11 +19,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,6 +39,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mytest.composetest.ui.theme.Black40
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -102,12 +112,12 @@ object IndexedScroll {
         ADOT(listOf(IconLabel(Icons.Filled.School)))
     }
 
-    fun getIndexLabel(indexTypes: List<ScrollIndexType>): List<IndexLabel> {
+    fun getIndexLabel(indexTypes: List<ScrollIndexType>): ImmutableList<IndexLabel> {
         val labelList = mutableListOf<IndexLabel>()
         indexTypes.forEach {
             labelList.addAll(it.labelList)
         }
-        return labelList
+        return labelList.toImmutableList()
     }
 }
 
@@ -119,7 +129,7 @@ object IndexedScroll {
 @Composable
 fun IndexedScroll(
     modifier: Modifier = Modifier,
-    labelList: List<IndexLabel>,
+    labelList: ImmutableList<IndexLabel>,
     isScrollState: Boolean = false,
     scrollbarWidth: Dp = 20.dp,
     scrollbarBgColor: Color = Black40,
@@ -198,7 +208,7 @@ fun IndexedScroll(
 @Composable
 fun IndexedScrollBar(
     modifier: Modifier = Modifier,
-    labelList: List<IndexLabel>,
+    labelList: ImmutableList<IndexLabel>,
     scrollbarWidth: Dp = 20.dp,
     bgColor: Color = Black40,
     onHovered: (Int, Boolean) -> Unit
@@ -311,6 +321,12 @@ fun TextLabelBox(
     itemTextSizeDp: Dp
 ) {
     val distanceOfSelectedIndex by getAlphaAndFontWeightByDistance(myIndex, currentDraggedItemIndex)
+    val density = LocalDensity.current
+    val fontSize by remember(density) {
+        derivedStateOf {
+            density.run { itemTextSizeDp.toSp() }
+        }
+    }
 
     Box(modifier = modifier) {
         Text(
@@ -319,7 +335,7 @@ fun TextLabelBox(
                 .alpha(distanceOfSelectedIndex.first),
             text = label,
             maxLines = 1,
-            fontSize = LocalDensity.current.run { itemTextSizeDp.toSp() },
+            fontSize = fontSize,
             textAlign = TextAlign.Center,
             fontWeight = distanceOfSelectedIndex.second
         )
@@ -397,17 +413,18 @@ fun CenterIconBox(
 @Composable
 fun DefaultPreview() {
     Column {
-        IndexedScroll(
-            labelList = IndexedScroll.getIndexLabel(
-                listOf(
-                    IndexedScroll.ScrollIndexType.SEARCH,
-                    IndexedScroll.ScrollIndexType.FAVORITE,
-                    IndexedScroll.ScrollIndexType.KOREAN_ENGLISH
-                )
-            ),
-        ) {
-
-        }
-        Icon(imageVector = Icons.Filled.Search, contentDescription = "")
+//        IndexedScroll(
+//            labelList = IndexedScroll.getIndexLabel(
+//                listOf(
+//                    IndexedScroll.ScrollIndexType.SEARCH,
+//                    IndexedScroll.ScrollIndexType.FAVORITE,
+//                    IndexedScroll.ScrollIndexType.KOREAN_ENGLISH
+//                )
+//            ),
+//        ) {
+//
+//        }
+//        Icon(imageVector = Icons.Filled.Search, contentDescription = "")
+        TextLabelBox(label = "ㄷ", myIndex = 3, currentDraggedItemIndex = 4, itemTextSizeDp = 10.dp)
     }
 }

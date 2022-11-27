@@ -47,14 +47,14 @@ class PerformanceActivity : ComponentActivity() {
 //                        headerText = "전체목록"
 //                    )
 
-                    FoodList(
-                        Modifier.padding(scaffoldPadding),
-                        listOf(
-                            FoodInfo("Meat ball", LocalDateTime.now()),
-                            FoodInfo("Pizza",LocalDateTime.now()),
-                            FoodInfo("Chicken",LocalDateTime.now())
-                        ).toImmutableList()
-                    )
+//                    FoodList(
+//                        Modifier.padding(scaffoldPadding),
+//                        listOf(
+//                            FoodInfo("Meat ball", LocalDateTime.now()),
+//                            FoodInfo("Pizza",LocalDateTime.now()),
+//                            FoodInfo("Chicken",LocalDateTime.now())
+//                        ).toImmutableList()
+//                    )
 
 //                    FoodCard(Modifier.padding(scaffoldPadding), FoodInfo("Meat ball"))
 
@@ -65,22 +65,22 @@ class PerformanceActivity : ComponentActivity() {
 
 
                       // 버튼 + 카운트 예제
-//                    val screenState by viewModel.screenState.collectAsState()
-//                    val checkedChanged = remember<(Boolean) -> Unit> {
-//                        { viewModel.setSwitchValue(it) }
-//                    }
-//                    val increaseCount =  remember<() -> Unit> {
+                    val screenState by viewModel.screenState.collectAsState()
+                    val checkedChanged = remember<(Boolean) -> Unit> {
+                        { viewModel.setSwitchValue(it) }
+                    }
+                    val increaseCount =  remember<() -> Unit> {
+                        { viewModel.increaseCount() }
+                    }
+
+                    PerformanceTestScreen3(
+                        Modifier.padding(scaffoldPadding),
+                        screenState,
+//                        { isChecked -> viewModel.setSwitchValue(isChecked) },
 //                        { viewModel.increaseCount() }
-//                    }
-//
-//                    PerformanceTestScreen3(
-//                        Modifier.padding(scaffoldPadding),
-//                        screenState,
-////                        { isChecked -> viewModel.setSwitchValue(isChecked) },
-////                        { viewModel.increaseCount() }
-//                        checkedChanged,
-//                        increaseCount
-//                    )
+                        checkedChanged,
+                        increaseCount
+                    )
                 }
             }
         }
